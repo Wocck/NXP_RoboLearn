@@ -1,0 +1,27 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"cmake.configureOnOpen": false,
+
+		// IntelliSense
+		"C_Cpp.default.compilerPath": "",
+		"C_Cpp.default.compileCommands": "",
+
+		// File Associations
+		"files.associations": {}
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [],
+		"inputs": []
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": []
+	},
+	"extensions": {}
+}
