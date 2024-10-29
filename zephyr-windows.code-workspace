@@ -31,7 +31,7 @@
 					"kind": "build",
 					"isDefault": true
 				},
-				"command": "${userHome}/NXP_proj/zephyrproject/.venv/Scripts/west",
+				"command": "${userHome}\\NXP_proj\\zephyrproject\\.venv\\Scripts\\west",
 				"args": [
 					"build",
 					"-p",
@@ -50,7 +50,7 @@
 				"group": {
 					"kind": "build",
 				},
-				"command": "${userHome}/NXP_proj/zephyrproject/.venv/Scripts/west",
+				"command": "${userHome}\\NXP_proj\\zephyrproject\\.venv\\Scripts\\west",
 				"args": [
 					"build",
 					"-p",
@@ -66,7 +66,7 @@
 				"label": "West Flash",
 				"type": "shell",
 				"dependsOn": "Set ZEPHYR_BASE",
-				"command": "${userHome}/NXP_proj/zephyrproject/.venv/Scripts/west",
+				"command": "${userHome}\\NXP_proj\\zephyrproject\\.venv\\Scripts\\west",
 				"args": [
 					"flash"
 				],
