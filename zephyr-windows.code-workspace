@@ -8,18 +8,25 @@
 		"cmake.configureOnOpen": false,
 
 		"C_Cpp.default.compilerPath": "${userHome}\\zephyr-sdk-0.17.0\\arm-zephyr-eabi\\bin\\arm-zephyr-eabi-gcc",
-		"C_Cpp.default.compileCommands": "${workspaceFolder}\\build\\compile_commands.json",
-
-		"terminal.integrated.env.windows": {
-        	"ZEPHYR_BASE": "${workspaceFolder}\\..\\zephyrproject\\zephyr"
-    	}
+		"C_Cpp.default.compileCommands": "${workspaceFolder}\\build\\compile_commands.json"
 	},
 	"tasks": {
 		"version": "2.0.0",
 		"tasks": [
 			{
+                "label": "Set ZEPHYR_BASE",
+                "type": "shell",
+                "command": "powershell",
+                "args": [
+                    "-Command",
+                    "$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE"
+                ],
+                "problemMatcher": []
+            },
+			{
 				"label": "West Build",
 				"type": "shell",
+				"dependsOn": "Set ZEPHYR_BASE",
 				"group": {
 					"kind": "build",
 					"isDefault": true
@@ -39,6 +46,7 @@
 			{
 				"label": "West Configurable Build",
 				"type": "shell",
+				"dependsOn": "Set ZEPHYR_BASE",
 				"group": {
 					"kind": "build",
 				},
@@ -57,6 +65,7 @@
 			{
 				"label": "West Flash",
 				"type": "shell",
+				"dependsOn": "Set ZEPHYR_BASE",
 				"command": "${userHome}/NXP_proj/zephyrproject/.venv/Scripts/west",
 				"args": [
 					"flash"
