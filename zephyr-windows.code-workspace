@@ -11,7 +11,7 @@
 		"C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
 
 		"terminal.integrated.env.windows": {
-        	"ZEPHYR_BASE": "${workspaceFolder}\\zephyrproject\\zephyr"
+        	"ZEPHYR_BASE": "${workspaceFolder}\\..\\zephyrproject\\zephyr"
     	}
 	},
 	"tasks": {
