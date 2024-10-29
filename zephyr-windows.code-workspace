@@ -16,12 +16,88 @@
 	},
 	"tasks": {
 		"version": "2.0.0",
-		"tasks": [],
-		"inputs": []
+		"tasks": [
+			{
+				"label": "West Build",
+				"type": "shell",
+				"group": {
+					"kind": "build",
+					"isDefault": true
+				},
+				"command": "${userHome}/zephyrproject/.venv/Scripts/west",
+				"args": [
+					"build",
+					"-p",
+					"auto",
+					"-b",
+					"nrf52840dk_nrf52840"
+				],
+				"problemMatcher": [
+					"$gcc"
+				],
+			},
+			{
+				"label": "West Configurable Build",
+				"type": "shell",
+				"group": {
+					"kind": "build",
+				},
+				"command": "${userHome}/zephyrproject/.venv/Scripts/west",
+				"args": [
+					"build",
+					"-p",
+					"${input:pristine}",
+					"-b",
+					"${input:board}"
+				],
+				"problemMatcher": [
+					"$gcc"
+				]
+			},
+			{
+				"label": "West Flash",
+				"type": "shell",
+				"command": "${userHome}/zephyrproject/.venv/Scripts/west",
+				"args": [
+					"flash"
+				],
+				"problemMatcher": [
+					"$gcc"
+				]
+			}
+		],
+		"inputs": [
+			{
+				"id": "board",
+				"type": "promptString",
+				"default": "nrf52840dk_nrf52840",
+				"description": "See https://docs.zephyrproject.org/latest/boards/index.html"
+			},
+			{
+				"id": "pristine",
+				"type": "pickString",
+				"description": "Choose when to run a pristine build",
+				"default": "auto",
+				"options": [
+					"auto",
+					"always",
+					"never"
+				]
+			}
+		]
 	},
 	"launch": {
 		"version": "0.2.0",
 		"configurations": []
 	},
-	"extensions": {}
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.cpptools-extension-pack",
+			"ms-python.python",
+			"ms-vscode.vscode-embedded-tools",
+			"ms-vscode.vscode-serial-monitor",
+			"marus25.cortex-debug",
+			"donjayamanne.python-environment-manager"
+		]
+	}
 }
