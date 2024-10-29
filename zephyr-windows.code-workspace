@@ -7,8 +7,8 @@
 	"settings": {
 		"cmake.configureOnOpen": false,
 
-		"C_Cpp.default.compilerPath": "${userHome}/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc",
-		"C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+		"C_Cpp.default.compilerPath": "${userHome}\\zephyr-sdk-0.17.0\\arm-zephyr-eabi\\bin\\arm-zephyr-eabi-gcc",
+		"C_Cpp.default.compileCommands": "${workspaceFolder}\\build\\compile_commands.json",
 
 		"terminal.integrated.env.windows": {
         	"ZEPHYR_BASE": "${workspaceFolder}\\..\\zephyrproject\\zephyr"
