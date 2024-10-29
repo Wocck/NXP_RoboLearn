@@ -8,8 +8,8 @@
 		"cmake.configureOnOpen": false,
 
 		// IntelliSense
-		"C_Cpp.default.compilerPath": "",
-		"C_Cpp.default.compileCommands": "",
+		"C_Cpp.default.compilerPath": "${userHome}/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc",
+		"C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
 
 		// File Associations
 		"files.associations": {}
@@ -24,13 +24,13 @@
 					"kind": "build",
 					"isDefault": true
 				},
-				"command": "${userHome}/zephyrproject/.venv/Scripts/west",
+				"command": "${userHome}/NXP_proj/zephyrproject/.venv/Scripts/west",
 				"args": [
 					"build",
 					"-p",
 					"auto",
 					"-b",
-					"nrf52840dk_nrf52840"
+					"mimrxt1064_evk"
 				],
 				"problemMatcher": [
 					"$gcc"
@@ -42,7 +42,7 @@
 				"group": {
 					"kind": "build",
 				},
-				"command": "${userHome}/zephyrproject/.venv/Scripts/west",
+				"command": "${userHome}/NXP_proj/zephyrproject/.venv/Scripts/west",
 				"args": [
 					"build",
 					"-p",
@@ -57,7 +57,7 @@
 			{
 				"label": "West Flash",
 				"type": "shell",
-				"command": "${userHome}/zephyrproject/.venv/Scripts/west",
+				"command": "${userHome}/NXP_proj/zephyrproject/.venv/Scripts/west",
 				"args": [
 					"flash"
 				],
@@ -70,7 +70,7 @@
 			{
 				"id": "board",
 				"type": "promptString",
-				"default": "nrf52840dk_nrf52840",
+				"default": "mimrxt1064_evk",
 				"description": "See https://docs.zephyrproject.org/latest/boards/index.html"
 			},
 			{
@@ -88,7 +88,31 @@
 	},
 	"launch": {
 		"version": "0.2.0",
-		"configurations": []
+		"configurations": [
+			{
+				"name": "Launch",
+				"device": "mimrxt1064_evk",
+				"cwd": "${workspaceFolder}",
+				"executable": "build/zephyr/zephyr.elf",
+				"request": "launch",
+				"type": "cortex-debug",
+				"runToEntryPoint": "main",
+				"servertype": "jlink",
+				"gdbPath": "${userHome}/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+				"preLaunchTask": "West Build"
+			},
+			{
+				"name": "Attach",
+				"device": "mimrxt1064_evk",
+				"cwd": "${workspaceFolder}",
+				"executable": "build/zephyr/zephyr.elf",
+				"request": "attach",
+				"type": "cortex-debug",
+				"runToEntryPoint": "main",
+				"servertype": "jlink",
+				"gdbPath": "${userHome}/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb"
+			},
+		]
 	},
 	"extensions": {
 		"recommendations": [
