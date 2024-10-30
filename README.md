@@ -25,7 +25,9 @@ Następnie zainstalujesz wymagane narzędzia za pomocą menedżera pakietów Cho
 |------------------------------------|------------------|
 | [CMake](https://cmake.org/)        | 3.20.5          |
 | [Python](https://www.python.org/)  | 3.11            |
-| [Kompilator Devicetree](https://www.devicetree.org/) | 1.4.6 |
+|[J-Link Software and Documentation Pack](https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack) | Wymagana dla J-Link |
+
+
 
 ### Instalacja narzędzi na Windows
 Poniższa instalacja jest zgodna z instrukcją na oficjalnej stronie [Zephyr RTOS](https://docs.zephyrproject.org/latest/develop/getting_started/index.html). Używa się w niej oprogramowania *Chocolatey* dla ułatwienia instalacji. Jednak nie jest to konieczne, użytkownik może zainstalować poniższe zależności i programy z oficjalnych stron dystrybucyjnych.
