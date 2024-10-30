@@ -1,24 +1,40 @@
-#include <stdio.h>
+#include <iostream>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 
-#define LED_PIN 2 // Replace with the correct pin for your board if needed
-#define LED_PORT "GPIO1"
+#define SLEEP_TIME_MS 1000  // 1000 ms = 1 second
+
+#define LED0_NODE DT_ALIAS(led0)
+
+// Ensure LED0 alias is defined in the device tree
+static const gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
 int main() {
-    const struct device *led_dev = device_get_binding(LED_PORT);
+    int ret;
+    bool led_state = true;
 
-    if (led_dev == nullptr) {
-        printk("Failed to bind to LED device\n");
-        return 1;
+    if (!gpio_is_ready_dt(&led)) {
+        std::cout << "Error: LED device not ready" << std::endl;
+        return -1;
     }
 
-    gpio_pin_configure(led_dev, LED_PIN, GPIO_OUTPUT);
+    ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
+    if (ret < 0) {
+        std::cout << "Error: Failed to configure LED pin" << std::endl;
+        return -1;
+    }
 
     while (true) {
-        gpio_pin_toggle(led_dev, LED_PIN);
-        printk("LED toggled!\n");
-        k_msleep(500);  // Wait 500 ms
+        ret = gpio_pin_toggle_dt(&led);
+        if (ret < 0) {
+            std::cout << "Error: Failed to toggle LED" << std::endl;
+            return -1;
+        }
+
+        led_state = !led_state;
+        std::cout << "LED state: " << (led_state ? "ON" : "OFF") << std::endl;
+        k_msleep(SLEEP_TIME_MS);
     }
+
     return 0;
 }
