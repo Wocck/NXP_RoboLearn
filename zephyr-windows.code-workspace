@@ -14,49 +14,16 @@
 		"version": "2.0.0",
 		"tasks": [
 			{
-                "label": "Set ZEPHYR_BASE",
-                "type": "shell",
-                "command": "powershell",
-                "args": [
-                    "-Command",
-                    "$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE"
-                ],
-                "problemMatcher": []
-            },
-			{
 				"label": "West Build",
 				"type": "shell",
-				"dependsOn": "Set ZEPHYR_BASE",
 				"group": {
 					"kind": "build",
 					"isDefault": true
 				},
-				"command": "${userHome}\\NXP_proj\\.venv\\Scripts\\west",
+				"command": "powershell",
 				"args": [
-					"build",
-					"-p",
-					"auto",
-					"-b",
-					"mimrxt1064_evk"
-				],
-				"problemMatcher": [
-					"$gcc"
-				],
-			},
-			{
-				"label": "West Configurable Build",
-				"type": "shell",
-				"dependsOn": "Set ZEPHYR_BASE",
-				"group": {
-					"kind": "build",
-				},
-				"command": "${userHome}\\NXP_proj\\.venv\\Scripts\\west",
-				"args": [
-					"build",
-					"-p",
-					"${input:pristine}",
-					"-b",
-					"${input:board}"
+					"-Command",
+					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' build -s . -p auto -b mimxrt1064_evk"
 				],
 				"problemMatcher": [
 					"$gcc"
@@ -65,10 +32,14 @@
 			{
 				"label": "West Flash",
 				"type": "shell",
-				"dependsOn": "Set ZEPHYR_BASE",
-				"command": "${userHome}\\NXP_proj\\.venv\\Scripts\\west",
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				},
+				"command": "powershell",
 				"args": [
-					"flash"
+					"-Command",
+					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' flash"
 				],
 				"problemMatcher": [
 					"$gcc"
