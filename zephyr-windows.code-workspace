@@ -77,8 +77,8 @@
 				"request": "launch",
 				"type": "cortex-debug",
 				"runToEntryPoint": "main",
-				"servertype": "jlink",
-				"gdbPath": "${userHome}/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb",
+				"servertype": "pyocd",
+				"gdbPath": "${userHome}\\zephyr-sdk-0.17.0\\arm-zephyr-eabi\\bin\\arm-zephyr-eabi-gdb",
 				"preLaunchTask": "West Build"
 			},
 			{
@@ -89,8 +89,8 @@
 				"request": "attach",
 				"type": "cortex-debug",
 				"runToEntryPoint": "main",
-				"servertype": "jlink",
-				"gdbPath": "${userHome}/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb"
+				"servertype": "pyocd",
+				"gdbPath": "${userHome}\\zephyr-sdk-0.17.0\\arm-zephyr-eabi\\bin\\arm-zephyr-eabi-gdb"
 			},
 		]
 	},
