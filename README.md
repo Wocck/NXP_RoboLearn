@@ -59,7 +59,9 @@ Poniższa instalacja jest zgodna z instrukcją na oficjalnej stronie [Zephyr RTO
     ```  
     Po tych operacjach gdy wpiszemy w **cmd.exe** ```python --version``` powinniśmy otrzymać:
     
-     ```Python 3.11.*```
+    ```Python 3.11.*```
+
+    Następnie zainstaluj pakiet **pyocd** do flash-owania płytki: ```pip install pyocd```
 
 4. **Zamknij i otwórz ponownie terminal *cmd.exe* jako zwykły użytkownik**
     - Przejdź to stworzonego folderu na projekt (zobacz instrukcje na gałęzi *main*) i stwórz i aktywuj wirtówalne środowisko

@@ -8,7 +8,7 @@
 		"cmake.configureOnOpen": false,
 
 		"C_Cpp.default.compilerPath": "${userHome}\\zephyr-sdk-0.17.0\\arm-zephyr-eabi\\bin\\arm-zephyr-eabi-gcc",
-		"C_Cpp.default.compileCommands": "${workspaceFolder}\\build\\compile_commands.json"
+		"C_Cpp.default.compileCommands": "${workspaceFolder}\\build\\compile_commands.json",
 	},
 	"tasks": {
 		"version": "2.0.0",
@@ -34,12 +34,12 @@
 				"type": "shell",
 				"group": {
 					"kind": "build",
-					"isDefault": false
+					"isDefault": true
 				},
 				"command": "powershell",
 				"args": [
 					"-Command",
-					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' flash"
+					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' flash --runner pyocd"
 				],
 				"problemMatcher": [
 					"$gcc"
