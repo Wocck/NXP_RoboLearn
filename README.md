@@ -89,10 +89,57 @@ Poniższa instalacja jest zgodna z instrukcją na oficjalnej stronie [Zephyr RTO
     ```
 
 6. **Sprawdź poprawność instalacji**
-    - Uruchom ponownie terminal **cmd.exe**
-    - Przejdź do ```cd zephyrproject\zephyr```
-    - Zbuduj przykładowy projekt 
-    ```bat
-    west build -p always -b mimxrt1064_evk samples\basic\blinky
+    1. Podłącz płytkę do komputera przy użyciu portu **Debug USB**
+    2. W Visual Studio Code otwórz folder z projektem (*NXP_RoboLearn*)
+    3. Wybierz *File -> Open Workspace from File* i wybierz plik `zephyr-workspace.code-workspace`
+    4. Aby uruchomić zdefiniowane taski do kompilacji i flash-owania płytki, użyj skrótu klawiszowego `Ctrl+Shift+P` i wpisz `Tasks: Run Task` i wybierz odpowiednią opcję.
+    5. Najpierw zbuduj projekt przy użyciu **west build** a następnie wgraj go na płytkę przy użyciu **west flash**.
+    6. Na płytce powinna zacząć migać zielona dioda LED
+
+### Możliwe przyczyny błędów podczas próby kompilacji
+
+ - Brak zainstalowanego Pythona w wersji 3.11: sprawdź czy w terminalu PowerShell wpisując `python --version` otrzymujesz `Python 3.11.*`
+ - Brak zainstalowanego **pyodc** w Python311 do flash-owania płytki: zainstaluj go przy użyciu `pip install pyocd` w terminalu
+ - Zła struktura folderów - aby zdefiniowane taski działały poprawnie potrzebna jest następująca struktura projektu:
     ```
-    - Następnie wgraj projekt na płytkę ```west flash```
+    C:\Users\username
+    ├── zephyr-sdk-0.17.0
+    ├── NXP_Proj
+        ├── .venv
+        ├── zephyrproject
+        │   ├── zephyr
+        │   └── ...
+        ├── NXP_RoboLearn
+        │   └── ...
+    ```
+    Istotne jest aby folder nadrzędny dla projektu miał nazwę `NXP_Proj` oraz aby folder z SDK miał nazwę `zephyr-sdk-<version>`. Należy sprawdzić czy w pliku `zephyr-workspace.code-workspace` ścieżki do folderów są poprawne.
+ - W przypadku zmiany nazwy folderów należy wejść do folderu `zephyrproject` i w wirtualnym środowisku pythona (.venv) wpisać `west update` oraz `west zephyr-export` aby zaktualizować ścieżki do folderów.
+ - Upewnij się że masz zainstalowane wymagane rozszerzenia w VS Code (patrz `extensions` w pliku `zephyr-workspace.code-workspace`)
+
+### Ćwiczenia
+
+#### Wgraj i uruchom program na płytce:
+
+- Skonfiguruj środowisko i wgraj kod na płytkę.
+- Dioda LED powinna migać co sekundę, co potwierdza działanie pętli głównej.
+
+#### Monitorowanie portu szeregowego (Serial Monitor):
+
+Aby zobaczyć komunikaty wypisywane na konsolę przez `std::cout` i `printf`, otwórz **Serial Monitor** w Visual Studio Code:
+
+1. W dolnym pasku wybierz ikonę **Serial Monitor**.
+2. Wybierz odpowiedni **port szeregowy** (np. COM3, COM4 itp.), do którego podłączona jest płytka.
+3. Ustaw **baud rate** na 115200.
+4. Po nawiązaniu połączenia powinieneś zobaczyć wyjście z programu.
+
+#### Debugowanie zmiennych czasu wykonania:
+
+1. Otwórz debuger (**Run and Debug (ctrl+shift+D**) i umieść punkty przerwania w funkcjach `measure_time_cout` oraz `measure_time_printf`.
+2. Za każdym razem, gdy kod zatrzyma się na tych funkcjach, sprawdź wartości zmiennych:
+   - `cout_duration` – czas wykonania operacji `std::cout`.
+   - `printf_duration` – czas wykonania operacji `printf`.
+
+#### Analiza wyników:
+
+- Porównaj czasy wykonania `cout_duration` i `printf_duration`. Zwróć uwagę, czy jedna z tych funkcji zajmuje znacznie więcej czasu.
+- Na podstawie uzyskanych wyników przeanalizuj, jakie różnice występują między `std::cout` a `printf` w kontekście ich wydajności na systemach wbudowanych.
