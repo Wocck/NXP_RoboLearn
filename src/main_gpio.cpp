@@ -5,7 +5,7 @@
 
 /* Definicje dla D15 */
 #define D15_GPIO_NODE DT_NODELABEL(gpio1)
-#define D15_PIN 16
+#define D15_PIN 27
 
 /* Opcjonalnie, jeśli potrzebujesz flag, możesz je zdefiniować */
 #define D15_FLAGS GPIO_ACTIVE_LOW
