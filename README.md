@@ -5,6 +5,35 @@ Przed przystąpieniem do ćwiczenia związanego z obsługą GPIO na płytce MIMX
 
 ---
 
+### Połączenia elementów
+
+#### 1. Podłączenie diody LED
+
+Aby podłączyć diodę LED do płytki, wykonaj poniższe kroki:
+
+- **Anoda (dłuższa nóżka diody LED)**: Podłącz anodę do wybranego pinu GPIO na płytce, który będzie sterował diodą (np. D15). Jest to pin, na którym będziemy ustawiali sygnał wysoki lub niski, aby włączyć lub wyłączyć diodę.
+- **Katoda (krótsza nóżka diody LED)**: Podłącz katodę do masy (GND) przez rezystor. Rezystor jest wymagany, aby ograniczyć prąd przepływający przez diodę i zapobiec jej uszkodzeniu. 
+
+
+**Uwaga**: Wartość rezystora zależy od diody LED oraz napięcia roboczego. Dla typowej diody LED przy napięciu 3.3V rezystor 220 Ω zapewnia odpowiedni poziom prądu (około 10-15 mA), co jest wystarczające do bezpiecznego działania diody. Dla każdej diody powinniśmy sprawdzić napięcie robocze i obliczyć potrzebną rezystancję z prawa Ohma.
+
+#### 2. Podłączenie przycisku
+
+Podłączenie przycisku wymaga konfiguracji z rezystorem **pull-up** lub **pull-down**, aby zapewnić stabilny stan wejścia, gdy przycisk nie jest wciskany.
+
+**Kroki podłączenia**:
+
+- **Jedna nóżka przycisku**: Podłącz ją do masy (GND).
+- **Druga nóżka przycisku**: Podłącz do wybranego pinu GPIO (np. D14), który będzie konfigurowany jako wejście. Wewnątrz mikrokontrolera włącz rezystor **pull-up**. Dzięki temu pin GPIO będzie miał stan wysoki (1), gdy przycisk jest niewciśnięty, oraz niski (0), gdy przycisk zostanie wciśnięty.
+
+**Wykorzystanie rezystora pull-up**: Wiele mikrokontrolerów pozwala na aktywację wewnętrznego rezystora pull-up w ustawieniach pinu GPIO. Można to zrobić w kodzie (np. ustawiając `GPIO_PULL_UP`), dzięki czemu nie jest potrzebny dodatkowy rezystor zewnętrzny.
+
+**Schemat połączenia**:
+
+![Connection circuit](images/x.png)
+
+---
+
 ### Opis ułożenia pinów na płytce
 
 Płytka MIMXRT1064-EVK posiada interfejs zgodny z rozkładem pinów Arduino, co ułatwia podłączanie różnych modułów i czujników. Poniżej znajduje się opis pinów dostępnych na złączach J22, J23, J24, J25:
