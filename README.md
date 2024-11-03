@@ -3,6 +3,8 @@
 ## Ważne informacje
 Przed przystąpieniem do ćwiczenia związanego z obsługą GPIO na płytce MIMXRT1064-EVK w systemie Zephyr RTOS, warto zapoznać się z podstawowymi pojęciami oraz narzędziami, które ułatwią pracę z pinami GPIO.
 
+---
+
 ### Opis ułożenia pinów na płytce
 
 Płytka MIMXRT1064-EVK posiada interfejs zgodny z rozkładem pinów Arduino, co ułatwia podłączanie różnych modułów i czujników. Poniżej znajduje się opis pinów dostępnych na złączach J22, J23, J24, J25:
@@ -10,6 +12,8 @@ Płytka MIMXRT1064-EVK posiada interfejs zgodny z rozkładem pinów Arduino, co 
 ![Arduino Interface Pinout](images/arduino_interface.png)
 
 **Uwaga**: Nie wszystkie piny są dostępne do użytku jako GPIO, ponieważ niektóre z nich są zarezerwowane dla specjalnych funkcji (np. komunikacja I2C, SPI, UART). Jednak wiele z nich można skonfigurować jako standardowe piny GPIO.
+
+---
 
 ### Dostęp do pinów w Zephyr RTOS
 
@@ -102,6 +106,107 @@ arduino_header: connector {
   - `21 0`: Lokalny numer pinu w złączu (D15).
   - `&gpio1 16 0`: Odniesienie do kontrolera `gpio1`, numer pinu 16.
   - Komentarz `/* D15 */`: Informuje, że ten wpis dotyczy pinu D15.
+
+---
+
+### Plik `prj.conf` w Zephyr RTOS
+Plik prj.conf jest kluczowym elementem konfiguracji projektu w Zephyr RTOS. Służy do określania ustawień kompilacji i konfiguracji systemu dla Twojej aplikacji. Dzięki niemu możesz włączyć lub wyłączyć różne funkcje i moduły Zephyr, dostosowując system do potrzeb projektu.
+
+Pozwala na szereg funckji  w tym:
+ - włączanie lub wyłączanie określonych funkcjonalności, takich jak obsługa GPIO, UART, I2C, SPI
+ - zmianę rozmiaru stosu, priorytetów wątków, konfigurację pamięci
+ - optymalizacja zużycia zasobów
+
+Przykład:
+
+```dts
+CONFIG_GPIO=y
+CONFIG_PRINTK=y
+CONFIG_MAIN_STACK_SIZE=1024
+CONFIG_CPP=y
+```
+
+Wyjaśnienie:
+- `CONFIG_GPIO=y`: Włącza obsługę GPIO w systemie.
+- `CONFIG_PRINTK=y`: Włącza funkcję printk() do debugowania.
+- `CONFIG_MAIN_STACK_SIZE=1024`: Ustawia rozmiar stosu głównego wątku na 1024 bajty.
+- `CONFIG_CPP=y` : Włącza wspieranie C++
+
+---
+
+### Używanie GPIO w kodzie
+
+1. Zidentyfikuj pin na złączu Arduino: Na przykład, chcemy użyć pinu D15.
+2. Sprawdź mapowanie w `arduino_header`:
+```dts
+<21 0 &gpio1 16 0>; /* D15 */
+```
+3. Użyj tych informacji w kodzie:
+```C++
+#define D15_NODE DT_NODELABEL(gpio1)
+#define D15_PIN 
+
+const struct device *gpio_dev = DEVICE_DT_GET(D15_NODE);
+
+if (!device_is_ready(gpio_dev)) {
+    printk("GPIO device not ready\n");
+    return;
+}
+```
+
+Wytłumaczenie kodu:
+
+`struct device` jest uniwersalną strukturą reprezentującą różne urządzenia sprzętowe w systemie. Umożliwia jednolity sposób dostępu i interakcji z różnymi peryferiami, takimi jak GPIO, UART, SPI, Timer/Counters itd.
+
+Aby pobrać wskaźnik na dane urządzenie używamt makra `DEVICE_DT_GET()` wraz z indentyfikatorem węzła w naszym przypadku `DT_NODELABEL(gpio1)`. 
+
+Po uzyskaniu wskaźnika do struct device, należy sprawdzić czy zostało zainicjalizowane i gotowe do użycia za pomocą funckji `device_is_ready()`, która zwraca `true` jeżeli urządzenie jest gotowe do użycia.
+
+---
+
+### Konfiguracja pinu GPIO
+
+#### Flagi
+Kierunek pinu:
+- `GPIO_INPUT` – konfiguracja pinu jako wejście.
+- `GPIO_OUTPUT` – konfiguracja pinu jako wyjście.
+- `GPIO_OUTPUT_LOW` – ustawienie pinu jako wyjście z domyślnym stanem niskim.
+- `GPIO_OUTPUT_HIGH` – ustawienie pinu jako wyjście z domyślnym stanem wysokim.
+
+Tryb działania:
+- `GPIO_OPEN_DRAIN` – tryb otwartego drenu.
+- `GPIO_PUSH_PULL` – standardowy tryb push-pull.
+
+Rezystory podciągające:
+- `GPIO_PULL_UP` – włączenie rezystora podciągającego do zasilania.
+- `GPIO_PULL_DOWN` – włączenie rezystora podciągającego do masy.
+
+Aktywność logiczna:
+- `GPIO_ACTIVE_HIGH` – stan wysoki jest stanem aktywnym.
+- `GPIO_ACTIVE_LOW` – stan niski jest stanem aktywnym.
+
+Przykłady:
+- Konfiguracja pinu jako wejście z rezystorem podciągającym do zasilania i aktywnością niską
+  ```C++
+  gpio_pin_configure(gpio_dev, PIN_NUMBER, GPIO_INPUT | GPIO_PULL_UP | GPIO_ACTIVE_LOW);
+  ```
+- Konfiguracja pinu jako wejście bez rezystorów podciągających
+  ```C++ 
+  gpio_pin_configure(gpio_dev, PIN_NUMBER, GPIO_INPUT);
+  ```
+- Konfiguracja pinu jako wyjście w trybie open-drain:
+  ```C++
+  gpio_pin_configure(gpio_dev, D15_PIN, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
+  ```
+
+#### Operacje
+```C++
+gpio_pin_set(gpio_dev, D15_PIN, 1); // Ustawienie stanu wysokiego
+gpio_pin_set(gpio_dev, D15_PIN, 0); // Ustawienie stanu niskiego
+gpio_pin_toggle(gpio_dev, D15_PIN); // Przełączenie stanu pinu
+```
+
+Więcej o gpio: [GPIO Api documentation](https://docs.zephyrproject.org/apidoc/latest/group__gpio__interface.html)
 
 
 ## Ćwiczenie 1
