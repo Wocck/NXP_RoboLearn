@@ -208,7 +208,40 @@ gpio_pin_toggle(gpio_dev, D15_PIN); // Przełączenie stanu pinu
 
 Więcej o gpio: [GPIO Api documentation](https://docs.zephyrproject.org/apidoc/latest/group__gpio__interface.html)
 
+---
 
-## Ćwiczenie 1
+### CMakeLists.txt
 
-## Ćwiczenie 2
+W pliku `CMakeLists.txt` znajdują się informacje konfiguracyjne dla projektu Zephyr RTOS. Pozwala na dodanie plików źródłowych, bibliotek, konfiguracji kompilacji, itp. Jeżeli chcemy zbudować projekt na podstawie konkretnego pliku źródłowego musimy ustawić go jako *target_sources*. To znaczy, że jeżeli chcemy wgrać program `main_gpio.cpp` musimy dodać linijkę:
+
+```cmake
+target_sources(app PRIVATE src/main_gpio.cpp)
+```
+
+---
+
+## Ćwiczenie 1 - Kontrola wbudowanej diody LED
+
+### Opis
+Napisz program, który będzie kontrolował wbudowaną diodę LED na płytce MIMXRT1064-EVK. Diody powinny zmieniać stan (włączać/wyłączać) na podstawie stanu wbudowanego przycisku.
+
+### Instrukcje
+1. Skonfiguruj pin wbudowanej diody LED jako wyjście.
+2. Skonfiguruj wbudowany przycisk jako wejście z rezystorem podciągającym.
+3. W pętli głównej programu sprawdzaj stan przycisku.
+4. Jeśli przycisk jest wciśnięty, przełącz stan diody LED (jeśli była włączona, to wyłącz i odwrotnie).
+5. Dodaj mechanizm debouncingu, aby uniknąć wielokrotnego włączania/wyłączania diody LED podczas jednego naciśnięcia przycisku.
+
+## Ćwiczenie 2 - Sygnalizacja świetlna
+
+### Opis
+Zrealizuj prostą sygnalizację świetlną, która będzie kontrolowana przez wciśnięcie przycisku. Sygnalizacja powinna składać się z trzech diod LED: zielonej, żółtej i czerwonej.
+
+### Instrukcje
+1. Skonfiguruj piny dla trzech diod LED (zielona, żółta, czerwona) jako wyjścia.
+2. Skonfiguruj pin przycisku jako wejście z rezystorem podciągającym.
+3. W pętli głównej programu:
+   - Po naciśnięciu przycisku, włącz diodę zieloną na 5 sekund.
+   - Następnie włącz diodę żółtą na 2 sekundy.
+   - Na końcu włącz diodę czerwoną na 5 sekund.
+4. Po cyklu powtarzaj od nowa.
