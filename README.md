@@ -5,6 +5,16 @@ Przed przystąpieniem do ćwiczenia związanego z obsługą GPIO na płytce MIMX
 
 ---
 
+### Opis ułożenia pinów na płytce
+
+Płytka MIMXRT1064-EVK posiada interfejs zgodny z rozkładem pinów Arduino, co ułatwia podłączanie różnych modułów i czujników. Poniżej znajduje się opis pinów dostępnych na złączach J22, J23, J24, J25:
+
+![Arduino Interface Pinout](images/arduino_interface.png)
+
+**Uwaga**: Nie wszystkie piny są dostępne do użytku jako GPIO, ponieważ niektóre z nich są zarezerwowane dla specjalnych funkcji (np. komunikacja I2C, SPI, UART). Jednak wiele z nich można skonfigurować jako standardowe piny GPIO.
+
+---
+
 ### Połączenia elementów
 
 #### 1. Podłączenie diody LED
@@ -30,19 +40,7 @@ Podłączenie przycisku wymaga konfiguracji z rezystorem **pull-up** lub **pull-
 
 **Schemat połączenia**:
 
-![Connection circuit](images/x.png)
-
----
-
-### Opis ułożenia pinów na płytce
-
-Płytka MIMXRT1064-EVK posiada interfejs zgodny z rozkładem pinów Arduino, co ułatwia podłączanie różnych modułów i czujników. Poniżej znajduje się opis pinów dostępnych na złączach J22, J23, J24, J25:
-
-![Arduino Interface Pinout](images/arduino_interface.png)
-
-**Uwaga**: Nie wszystkie piny są dostępne do użytku jako GPIO, ponieważ niektóre z nich są zarezerwowane dla specjalnych funkcji (np. komunikacja I2C, SPI, UART). Jednak wiele z nich można skonfigurować jako standardowe piny GPIO.
-
----
+![Connection circuit](images/gpio_bb.png)
 
 ### Dostęp do pinów w Zephyr RTOS
 
