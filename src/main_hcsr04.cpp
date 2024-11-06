@@ -13,19 +13,19 @@
 #define BUZZER_FLAGS (GPIO_OUTPUT)
 
 /* Parametry dla dźwięku buzzera */
-#define MIN_DISTANCE_CM 10     // Minimalna odległość do aktywacji buzzera
-#define MAX_DISTANCE_CM 100    // Maksymalna odległość, przy której buzzer działa z przerwami
-#define BUZZER_PULSE_MS 100    // Czas impulsu buzzera
-#define BUZZER_OFF_MS 300      // Czas wyłączenia buzzera
+#define MIN_DISTANCE_CM 10          // Minimalna odległość do aktywacji buzzera
+#define MAX_DISTANCE_CM 20          // Maksymalna odległość, przy której buzzer działa z przerwami
+#define SHORT_BUZZER_PULSE_MS 10    // Czas impulsu buzzera (blisko)
+#define LONG_BUZZER_PULSE_MS 200    // Czas impulsu buzzera (daleko)
+#define ZERO_DISTANCE 2000          // Dystans który odpowiada zerwoej odległości (należy dopasować do odczytów)
 
-/* Inicjalizacja urządzeń */
 const struct device *gpio_dev;
 
-/* Funkcja do mierzenia odległości */
 int measure_distance() {
     uint32_t start, end;
-    
-    // Wysyłanie impulsu przez TRIG
+    // gpio_pin_set(gpio_dev, TRIG_PIN, 0);
+    // k_busy_wait(10);
+
     gpio_pin_set(gpio_dev, TRIG_PIN, 1);
     k_busy_wait(10);  // 10 mikrosekund
     gpio_pin_set(gpio_dev, TRIG_PIN, 0);
@@ -37,29 +37,37 @@ int measure_distance() {
     while (gpio_pin_get(gpio_dev, ECHO_PIN) == 1);
     end = k_cycle_get_32();
 
-    // Obliczenie odległości w centymetrach
-    uint32_t duration = end - start;
-    int distance_cm = (duration * 34300) / (2 * sys_clock_hw_cycles_per_sec());
-
+    // Obliczenie odległości
+    int duration = end - start;
+    double time_s = (double)duration / sys_clock_hw_cycles_per_sec();
+    printk("Czas: %.2f\n", time_s);
+    int distance_cm = (int)((time_s * 34300) / 2);
     return distance_cm;
 }
 
-/* Funkcja kontrolująca buzzer na podstawie odległości */
+
 void control_buzzer(int distance) {
-    if (distance <= MIN_DISTANCE_CM) {
-        // Przy bardzo małej odległości buzzer działa ciągle
+    if (distance >= ZERO_DISTANCE) {
+        // Ciągłe włączenie buzzera, gdy obiekt jest bardzo blisko (>= 2000 cm)
         gpio_pin_set(gpio_dev, BUZZER_PIN, 1);
-    } else if (distance <= MAX_DISTANCE_CM) {
-        // Dla większej odległości buzzer działa z przerwami
+    } else if (distance <= MIN_DISTANCE_CM) {
+        // Szybkie pikanie dla minimalnej odległości
         gpio_pin_set(gpio_dev, BUZZER_PIN, 1);
-        k_msleep(BUZZER_PULSE_MS);
+        k_msleep(SHORT_BUZZER_PULSE_MS);
         gpio_pin_set(gpio_dev, BUZZER_PIN, 0);
-        k_msleep(BUZZER_OFF_MS);
+        k_msleep(SHORT_BUZZER_PULSE_MS);
+    } else if (distance <= MAX_DISTANCE_CM) {
+        // Wolniejsze pikanie dla większej odległości (w zakresie MAX_DISTANCE_CM)
+        gpio_pin_set(gpio_dev, BUZZER_PIN, 1);
+        k_msleep(LONG_BUZZER_PULSE_MS);
+        gpio_pin_set(gpio_dev, BUZZER_PIN, 0);
+        k_msleep(LONG_BUZZER_PULSE_MS);
     } else {
-        // Buzzer wyłączony przy większych odległościach
+        // Wyłączenie buzzera, gdy obiekt jest poza zasięgiem określonych wartości
         gpio_pin_set(gpio_dev, BUZZER_PIN, 0);
     }
 }
+
 
 int main() {
     int ret;
@@ -94,10 +102,13 @@ int main() {
 
     while (1) {
         int distance = measure_distance();
-        printk("Odległość: %d cm\n", distance);
-
-        control_buzzer(distance);
-        k_msleep(500);  // Pomiary co pół sekundy
+        if (distance != -1) {
+            printk("Odległość: %d cm\n", distance);
+            control_buzzer(distance);
+        } else {
+            printk("Błąd pomiaru\n");
+        }
+        k_msleep(500);
     }
     return 0;
 }

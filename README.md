@@ -47,6 +47,10 @@ Oznacza to że programistycznie aby mierzyć odległość musimy:
 3. Gdy fala wróci czujnik zmieni stan pinu ECHO na niski. 
 4. Nasz program musi zmierzyć czas trwania sygnału wysokiego na pinie ECHO i obliczyć odległość z powyższego wzoru.
 
+## Kwestie Hardware
+
+Każdy hardware ma swoje mankamenty, które należy odpowiednio obsłużyć programowo. W tym przypadku jest to mierzenie odległości zerowej. Jeżeli przyłożymy przedmiot do czujnika odczytany pomiar czasu może okazać się wyjątkowo duży. Może to wynikać na przykład z tego, że czujnik nie rejestruje odbicia sygnału, mierzony czas trwa aż do osiągnięcia limitu. Z dokumentacji możemy wyczytać że czujnik jest w stanie mierzyć doległości od 2cm do 400cm co oznacza, nie wiemy jakie otrzymamy odczyty przy odległościach wykraczających poza zakres. Musimy to sprawdzić i odpowiednio oprogramować.
+
 ## Konfiguracja pinów
 Aby nasz mały program był ciekawszy dodamy moduł aktywnego Buzzera aby symulować działanie czujnika parkowania w samochodzie.
 
@@ -58,4 +62,3 @@ Aby nasz mały program był ciekawszy dodamy moduł aktywnego Buzzera aby symulo
 | GPIO A4           | TRIG (HCSR04)         | &gpio1 17            |
 | GPIO A5           | ECHO (HCSR04)         | &gpio1 16            |
 
-## Konfiguracja prj.conf
