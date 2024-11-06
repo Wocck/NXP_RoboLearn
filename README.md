@@ -18,7 +18,7 @@ Zaczynamy od urządzeń nie wymagających konkretnego protokołu komunikacyjnego
 
 Te moduły to: **HC-SR04** oraz **ST1140**.
 
-## Przykładowe połączenie modułu
+## Przykład 1: Czujnik odległości HC-SR04
 
 ![HC-SR04 example connection](images/hcsr04_conn.png)
 
@@ -32,7 +32,7 @@ Te moduły to: **HC-SR04** oraz **ST1140**.
 **Uwaga**: Pamiętaj aby podłaczanie modułów do płytki odbywało się bez podłączenia do źródła prądu oraz zawsze najpierw podłączaj uziemienie GND.
 ---
 
-## Działanie modułu HC-SR04
+### Działanie modułu HC-SR04
 Moduł HC-SR04 to ultradźwiękowy czujnik odległości, który mierzy czas przelotu fal dźwiękowych między czujnikiem a przeszkodą, co pozwala na obliczenie odległości. Działa w dwóch etapach:
 1. **Wysyłanie impulsu** – Czujnik generuje krótki impuls ultradźwiękowy o częstotliwości 40 kHz przez pin *TRIG*, który trwa 10 mikrosekund.
 
@@ -47,11 +47,11 @@ Oznacza to że programistycznie aby mierzyć odległość musimy:
 3. Gdy fala wróci czujnik zmieni stan pinu ECHO na niski. 
 4. Nasz program musi zmierzyć czas trwania sygnału wysokiego na pinie ECHO i obliczyć odległość z powyższego wzoru.
 
-## Kwestie Hardware
+### Kwestie Hardware
 
 Każdy hardware ma swoje mankamenty, które należy odpowiednio obsłużyć programowo. W tym przypadku jest to mierzenie odległości zerowej. Jeżeli przyłożymy przedmiot do czujnika odczytany pomiar czasu może okazać się wyjątkowo duży. Może to wynikać na przykład z tego, że czujnik nie rejestruje odbicia sygnału, mierzony czas trwa aż do osiągnięcia limitu. Z dokumentacji możemy wyczytać że czujnik jest w stanie mierzyć doległości od 2cm do 400cm co oznacza, nie wiemy jakie otrzymamy odczyty przy odległościach wykraczających poza zakres. Musimy to sprawdzić i odpowiednio oprogramować.
 
-## Konfiguracja pinów
+### Konfiguracja pinów
 Aby nasz mały program był ciekawszy dodamy moduł aktywnego Buzzera aby symulować działanie czujnika parkowania w samochodzie.
 
 | Pin na płytce NXP | Pin na module         | Pin w strukturze DTS |
@@ -62,3 +62,30 @@ Aby nasz mały program był ciekawszy dodamy moduł aktywnego Buzzera aby symulo
 | GPIO A4           | TRIG (HCSR04)         | &gpio1 17            |
 | GPIO A5           | ECHO (HCSR04)         | &gpio1 16            |
 
+Przykładowy kod implementujący działanie czujnika odległości z pikającym Buzzerem znajduje się w pliku `main_hcsr04.cpp`. 
+ - Skompiluj go i uruchom na płytce.
+ - Sprawdź odczyty odległości jak zmienia się ona oraz jakie się odczyty gdy dotkniemy przedmiotem do czujnika
+ - Dodaj więcej trybów "pikania" aby czujnik dawał więcej informacji co do odległości
+ - Zamień buzzer na diodę (pamiętaj o odpowiednim rezystorze!)
+
+## Przykład 2: czujnik odbiciowy ST1140
+Czujnik odbiciowy światła ST1140 działa, emitując wiązkę światła podczerwonego (IR) z wbudowanej diody LED. Gdy wiązka ta odbije się od powierzchni i wróci do fotodetektora (fototranzystora lub fotodioda), czujnik wykrywa obecność obiektu. Jest często używany do detekcji linii lub obiektów na krótkim dystansie, na przykład w robotyce do śledzenia linii.
+
+| Pin na płytce NXP | Pin na module HC-SR04 |
+|-------------------|-----------------------|
+| GND               | GND                   |
+| 5V                | VCC                   |
+| GPIO A5           | S                     |
+
+---
+
+### Działanie modułu HC-SR04
+Gdy wiązka światła odbija się od obiektu, który znajduje się w zasięgu, sygnał na wyjściu czujnika zmienia się. W zależności od koloru i rodzaju powierzchni obiektu, intensywność odbitego światła może być różna. Czarny kolor pochłania światło, więc zwraca mniejszy sygnał, podczas gdy jasne kolory odbijają go lepiej.
+
+Aby oprogramować moduł musimy:
+ - Skonfigurować pin wejściowy
+ - Odczytywać w pętli stan pinu
+ - Wypisać informacje na konsole aby sprawdzić działanie
+
+ ### Ćwiczenie
+ Oprogramuj moduł tak aby zwrócił informację czy napotkał kolor pochłaniający czy odbijający. Pamiętaj o użyciu poprawnych flag przy konfiguracji pinu wejściowego aby zapobiec niestabilności sygnału, gdy nie ma odbicia. Przykładowy kod znajdziesz w pliku `main_st1140.cpp`.
