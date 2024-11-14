@@ -96,6 +96,19 @@ Poniższa instalacja jest zgodna z instrukcją na oficjalnej stronie [Zephyr RTO
     5. Najpierw zbuduj projekt przy użyciu **west build** a następnie wgraj go na płytkę przy użyciu **west flash**.
     6. Na płytce powinna zacząć migać zielona dioda LED
 
+
+### Opcjonalne, ale zalecane: **Instalacja firmware J-Link na płytce**
+
+1. Odłącz płytkę od zasilania.
+2. Zewrzyj zworkę `J42` (znajdującą się obok portu USB), aby wymusić tryb DFU.
+3. Podłącz płytkę do komputera przez port USB.
+4. Pobierz oprogramowanie [LinkServer](https://www.nxp.com/design/design-center/software/development-software/mcuxpresso-software-and-tools-/linkserver-for-microcontrollers:LINKERSERVER) z witryny NXP.
+5. Przejdź do katalogu instalacyjnego LPCScrypt, zwykle `C:\NXP\LPCScrypt_2.1.3_83\scripts`, i uruchom skrypt `program_JLINK.cmd` jako administrator.
+6. W konsoli *cmd* powinna wyświetlić się informacja o pomyślnej instalacji firmware J-Link.
+
+**Uwaga:** Pełna instrukcja instalacji znajduje się w oficjalnym dokumencie NXP, dostępnym [tutaj](https://www.nxp.com/docs/en/application-note/AN13206.pdf).
+
+
 ### Możliwe przyczyny błędów podczas próby kompilacji
 
  - Brak zainstalowanego Pythona w wersji 3.11: sprawdź czy w terminalu PowerShell wpisując `python --version` otrzymujesz `Python 3.11.*`
@@ -134,7 +147,7 @@ Aby zobaczyć komunikaty wypisywane na konsolę przez `std::cout` i `printf`, ot
 
 #### Debugowanie zmiennych czasu wykonania:
 
-1. Otwórz debuger (**Run and Debug (ctrl+shift+D**) i umieść punkty przerwania w funkcjach `measure_time_cout` oraz `measure_time_printf`.
+1. Otwórz debuger **Run and Debug (ctrl+shift+D**) i umieść punkty przerwania w funkcjach `measure_time_cout` oraz `measure_time_printf`.
 2. Za każdym razem, gdy kod zatrzyma się na tych funkcjach, sprawdź wartości zmiennych:
    - `cout_duration` – czas wykonania operacji `std::cout`.
    - `printf_duration` – czas wykonania operacji `printf`.

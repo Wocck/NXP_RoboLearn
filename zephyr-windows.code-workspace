@@ -39,7 +39,7 @@
 				"command": "powershell",
 				"args": [
 					"-Command",
-					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' flash --runner pyocd"
+					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' flash --runner jlink"
 				],
 				"problemMatcher": [
 					"$gcc"
@@ -77,7 +77,7 @@
 				"request": "launch",
 				"type": "cortex-debug",
 				"runToEntryPoint": "main",
-				"servertype": "pyocd",
+				"servertype": "jlink",
 				"gdbPath": "${userHome}\\zephyr-sdk-0.17.0\\arm-zephyr-eabi\\bin\\arm-zephyr-eabi-gdb",
 				"preLaunchTask": "West Build"
 			},
@@ -89,7 +89,7 @@
 				"request": "attach",
 				"type": "cortex-debug",
 				"runToEntryPoint": "main",
-				"servertype": "pyocd",
+				"servertype": "jlink",
 				"gdbPath": "${userHome}\\zephyr-sdk-0.17.0\\arm-zephyr-eabi\\bin\\arm-zephyr-eabi-gdb"
 			},
 		]
