@@ -39,7 +39,7 @@
 				"command": "powershell",
 				"args": [
 					"-Command",
-					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' flash --runner jlink"
+					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west -v' flash --runner jlink"
 				],
 				"problemMatcher": [
 					"$gcc"
