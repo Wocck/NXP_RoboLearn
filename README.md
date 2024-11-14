@@ -101,13 +101,15 @@ Poniższa instalacja jest zgodna z instrukcją na oficjalnej stronie [Zephyr RTO
 
 1. Odłącz płytkę od zasilania.
 2. Zewrzyj zworkę `J42` (znajdującą się obok portu USB), aby wymusić tryb DFU.
-3. Podłącz płytkę do komputera przez port USB.
-4. Pobierz oprogramowanie [LinkServer](https://www.nxp.com/design/design-center/software/development-software/mcuxpresso-software-and-tools-/linkserver-for-microcontrollers:LINKERSERVER) z witryny NXP.
-5. Przejdź do katalogu instalacyjnego LPCScrypt, zwykle `C:\NXP\LPCScrypt_2.1.3_83\scripts`, i uruchom skrypt `program_JLINK.cmd` jako administrator.
-6. W konsoli *cmd* powinna wyświetlić się informacja o pomyślnej instalacji firmware J-Link.
+3. Zewrzyj zworkę `J1` na pinach 3 i 4 (drugi rząd od góry, góra oznaczona przez `1  2`)
+4. Podłącz płytkę do komputera przez port USB Debug.
+5. Podłącz zasilanie do płytki za pomocą portu USB OTG (J9)
+6. Pobierz oprogramowanie [LinkServer](https://www.nxp.com/design/design-center/software/development-software/mcuxpresso-software-and-tools-/linkserver-for-microcontrollers:LINKERSERVER) z witryny NXP.
+7. Przejdź do katalogu instalacyjnego LPCScrypt, zwykle `C:\NXP\LPCScrypt_2.1.3_83\scripts`, i uruchom skrypt `program_JLINK.cmd` jako administrator.
+8. W konsoli *cmd* powinna wyświetlić się informacja o pomyślnej instalacji firmware J-Link.
 
 **Uwaga:** Pełna instrukcja instalacji znajduje się w oficjalnym dokumencie NXP, dostępnym [tutaj](https://www.nxp.com/docs/en/application-note/AN13206.pdf).
-
+Od tego momentu musimy podłączyć zarówno port USB Debug (J41), jak i USB OTG (J9), aby zapewnić odpowiednie zasilanie oraz połączenie do debugowania.
 
 ### Możliwe przyczyny błędów podczas próby kompilacji
 
