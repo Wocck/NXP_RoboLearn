@@ -71,7 +71,7 @@
 		"configurations": [
 			{
 				"name": "Launch",
-				"device": "mimrxt1064_evk",
+				"device": "MIMXRT1064",
 				"cwd": "${workspaceFolder}",
 				"executable": "build/zephyr/zephyr.elf",
 				"request": "launch",
@@ -79,11 +79,11 @@
 				"runToEntryPoint": "main",
 				"servertype": "jlink",
 				"gdbPath": "${userHome}\\zephyr-sdk-0.17.0\\arm-zephyr-eabi\\bin\\arm-zephyr-eabi-gdb",
-				"preLaunchTask": "West Build"
+				"preLaunchTask": "West Build",
 			},
 			{
 				"name": "Attach",
-				"device": "mimrxt1064_evk",
+				"device": "MIMXRT1064",
 				"cwd": "${workspaceFolder}",
 				"executable": "build/zephyr/zephyr.elf",
 				"request": "attach",
