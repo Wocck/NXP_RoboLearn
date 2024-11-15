@@ -1,26 +1,10 @@
 &lpi2c1 {
-    status = "okay";                 // Upewnij się, że interfejs jest włączony
-    clock-frequency = <I2C_BITRATE_STANDARD>;  // Ustawienie częstotliwościhttps://vario.aqualab.pl/
-    label = "I2C_1";                  // Opcjonalna etykieta dla Twojego kodu
-
-    // Definicje pinów SCL i SDA (jeśli potrzebne)
-    pinctrl-0 = <&pinmux_lpi2c1_scl &pinmux_lpi2c1_sda>;
-    pinctrl-names = "default";
-};
-
-&lpi2c1 {
     status = "okay";
-    clock-frequency = <I2C_BITRATE_STANDARD>;
-    label = "I2C_1";
-
-    pinctrl-0 = <&pinctrl_lpi2c1_scl &pinctrl_lpi2c1_sda>;
+    pinctrl-0 = <&pinmux_lpi2c1>;
     pinctrl-names = "default";
-};
 
-pinctrl_lpi2c1_scl: lpi2c1_scl {
-    fsl,pins = <&iomuxc GPIO_AD_B1_14 IOMUXC_LPI2C1_SCL 0x4000007E>;
-};
-
-pinctrl_lpi2c1_sda: lpi2c1_sda {
-    fsl,pins = <&iomuxc GPIO_AD_B1_15 IOMUXC_LPI2C1_SDA 0x4000007E>;
+    aht20: aht20@38 {
+        compatible = "aosong,aht20";
+        reg = <0x38>;
+    };
 };
