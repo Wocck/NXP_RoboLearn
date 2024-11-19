@@ -1,22 +1,29 @@
 # Projekt NXP_RoboLearn
 
 ## Opis
+Ten projekt to zdalny pilot do sterowania robotem za pomocą joysticka Thumb Joystick v2 i modułu radiowego nRF24L01. Sterowanie odbywa się poprzez odczyt danych z joysticka (pozycja osi X, Y oraz przycisk) i przesyłanie ich do odbiornika zamontowanego na robocie za pomocą protokołu SPI i komunikacji radiowej.
 
-Ten projekt zawiera instrukcje instalacji i konfiguracji środowiska programistycznego Zephyr RTOS dla płytki NXP MIMXRT1064-EVK na systemie Windows, przy użyciu **Visual Studio Code** jako głównego edytora kodu. 
+## Wykorzystywane moduły i komponenty
 
-## Wymagania
+- **ESP32 DevKit V1** - mikrokontroler odpowiedzialny za obsługę joysticka i komunikację radiową.
+- **nRF24L01** - moduł radiowy do przesyłania danych między pilotem a robotem.
+- **Thumb Joystick z przyciskiem v2** - moduł joysticka do sterowania robotem.
 
-Przed przystąpieniem do pracy upewnij się, że masz:
-- System operacyjny Windows z aktualizacjami,
-- Prawa administratora do instalacji narzędzi,
-- Menedżera pakietów **Chocolatey** (opcjonalnie).
+Oprogramowanie napisane przy użyciu **Arduino IDE** oraz biblioteki `NRF` od `TMRh20`.
 
-## Kroki Instalacji
+## Schemat połączeń
 
-1. **Utwórz folder na projekt** - Wybierz miejsce na komputerze, gdzie będą przechowywane projekty, i utwórz nowy folder (np. `Robolearn_project`).
-
-2. **Przejdź do utworzonego folderu** - Użyj terminala lub Eksploratora plików, aby przejść do nowo utworzonego folderu.
-
-3. **Sklonuj repozytorium projektu** - Skopiuj to repozytorium
-
-4. **Wejdź na gałąź `lab_0_environment` i postępuj zgodnie z instrukcjami instalacji środowiska.**
+| Moduł/Komponent           | Pin na module      | Pin na ESP32 DevKit V1  | Opis                        |
+|---------------------------|--------------------|-------------------------|-----------------------------|
+| **Joystick**              | VCC                | 3.3V                    | Zasilanie joysticka         |
+|                           | GND                | GND                     | Masa                        |
+|                           | VRX                | GPIO2 (ADC2_2)          | Odczyt osi X                |
+|                           | VRY                | GPIO15 (ADC2_3)         | Odczyt osi Y                |
+|                           | SW                 | GPIO4                   | Stan przycisku              |
+| **nRF24L01**              | VCC                | 3.3V                    | Zasilanie modułu            |
+|                           | GND                | GND                     | Masa                        |
+|                           | CE                 | GPIO26                  | Tryb pracy                  |
+|                           | CSN (CS)           | GPIO27                  | Wybór urządzenia SPI        |
+|                           | SCK                | GPIO14                  | Zegar SPI                   |
+|                           | MOSI               | GPIO13                  | Dane do modułu (Master Out) |
+|                           | MISO               | GPIO12                  | Dane z modułu (Master In)   |
