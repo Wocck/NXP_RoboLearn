@@ -20,7 +20,7 @@ int main(void) {
 
     while (true) {
         if (aht40_read_data(i2c_dev, &temperature, &humidity)) {
-            printk("Temperature: %.2f°C, Humidity: %.2f%%\n", static_cast<double>(temperature), static_cast<double>(humidity));
+            printf("Temperature: %.2f°C, Humidity: %.2f%%\n", (double)temperature, (double)humidity);
 
         } else {
             printk("Failed to read data from AHT40 sensor\n");
