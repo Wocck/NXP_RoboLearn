@@ -17,13 +17,16 @@ Oprogramowanie napisane przy użyciu **Arduino IDE** oraz biblioteki `NRF` od `T
 |---------------------------|--------------------|-------------------------|-----------------------------|
 | **Joystick**              | VCC                | 3.3V                    | Zasilanie joysticka         |
 |                           | GND                | GND                     | Masa                        |
-|                           | VRX                | GPIO2 (ADC2_2)          | Odczyt osi X                |
-|                           | VRY                | GPIO15 (ADC2_3)         | Odczyt osi Y                |
-|                           | SW                 | GPIO4                   | Stan przycisku              |
+|                           | VRX                | GPIO4 (ADC2_0)          | Odczyt osi X                |
+|                           | VRY                | GPIO2 (ADC2_2)          | Odczyt osi Y                |
+|                           | SW                 | GPIO16                  | Stan przycisku              |
 | **nRF24L01**              | VCC                | 3.3V                    | Zasilanie modułu            |
 |                           | GND                | GND                     | Masa                        |
-|                           | CE                 | GPIO26                  | Tryb pracy                  |
-|                           | CSN (CS)           | GPIO27                  | Wybór urządzenia SPI        |
+|                           | CE                 | GPIO27                  | Tryb pracy                  |
+|                           | CSN (CS)           | GPIO15                  | Wybór urządzenia SPI        |
 |                           | SCK                | GPIO14                  | Zegar SPI                   |
 |                           | MOSI               | GPIO13                  | Dane do modułu (Master Out) |
 |                           | MISO               | GPIO12                  | Dane z modułu (Master In)   |
+
+
+# popraw pin CS na HSPI_CS 
