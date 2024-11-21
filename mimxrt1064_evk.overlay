@@ -8,26 +8,3 @@
         reg = <0x70>;
     };
 };
-
-&spi3 {
-    status = "okay";
-    cs-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
-    pinctrl-0 = <&pinctrl_lpspi3>;
-    pinctrl-names = "default";
-
-    nrf24l01: nrf24l01@0 {
-        compatible = "nordic,nrf24l01";
-        reg = <0>;
-        spi-max-frequency = <8000000>;
-        ce-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
-        label = "NRF24L01";
-    };
-};
-
-&pinctrl_lpspi3 {
-    fsl,pins = <
-        MXRT1064_IOMUXC_GPIO_SD_B0_00_LPSPI3_SCK    0x10B0
-        MXRT1064_IOMUXC_GPIO_SD_B0_01_LPSPI3_SDO    0x10B0
-        MXRT1064_IOMUXC_GPIO_SD_B0_02_LPSPI3_SDI    0x10B0
-    >;
-};

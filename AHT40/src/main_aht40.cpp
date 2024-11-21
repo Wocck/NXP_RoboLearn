@@ -6,6 +6,7 @@
 
 int main(void) {
     const struct device *i2c_dev = DEVICE_DT_GET(DT_NODELABEL(lpi2c1));
+
     float temperature, humidity;
 
     if (!device_is_ready(i2c_dev)) {
