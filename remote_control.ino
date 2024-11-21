@@ -22,6 +22,8 @@ int centerX, centerY;
 int maxDeflectionPositiveX, maxDeflectionNegativeX;
 int maxDeflectionPositiveY, maxDeflectionNegativeY;
 
+int rawX;
+int rawY;
 const byte address[6] = "00001";
 
 void calibrateJoystick() {
@@ -44,9 +46,56 @@ void calibrateJoystick() {
   Serial.println(centerY);
 }
 
+// void readJoystick() {
+//   rawX = analogRead(VRX_PIN);
+//   rawY = analogRead(VRY_PIN);
+
+//   int deltaX = rawX - centerX;
+//   int deltaY = rawY - centerY;
+
+//   float percentageX = 0;
+//   float percentageY = 0;
+
+//   // Obliczanie procentowego odchylenia dla osi X
+//   if (deltaX >= 0) {
+//     percentageX = (float)deltaX / maxDeflectionPositiveX * 100.0;
+//   } else {
+//     percentageX = (float)deltaX / maxDeflectionNegativeX * 100.0;
+//   }
+
+//   // Obliczanie procentowego odchylenia dla osi Y
+//   if (deltaY >= 0) {
+//     percentageY = (float)deltaY / maxDeflectionPositiveY * 100.0;
+//   } else {
+//     percentageY = (float)deltaY / maxDeflectionNegativeY * 100.0;
+//   }
+
+//   // Zastosowanie martwej strefy ±5%
+//   if (percentageX > -5 && percentageX < 5) {
+//     percentageX = 0;
+//   }
+//   if (percentageY > -5 && percentageY < 5) {
+//     percentageY = 0;
+//   }
+
+//   // Zaokrąglenie do najbliższej wartości dziesiętnej
+//   int valueX = ((int)(abs(percentageX) / 10)) * 10;
+//   int valueY = ((int)(abs(percentageY) / 10)) * 10;
+
+//   if (valueX > 90) valueX = 90;
+//   if (valueY > 90) valueY = 90;
+
+//   // Przywrócenie znaku odchylenia
+//   data.joystickX = valueX * ((percentageX >= 0) ? 1 : -1);
+//   data.joystickY = valueY * ((percentageY >= 0) ? 1 : -1);
+
+//   // Odczyt przycisku
+//   data.buttonPressed = !digitalRead(SW_PIN);
+// }
+
 void readJoystick() {
-  int rawX = analogRead(VRX_PIN);
-  int rawY = analogRead(VRY_PIN);
+  rawX = analogRead(VRX_PIN);
+  rawY = analogRead(VRY_PIN);
 
   int deltaX = rawX - centerX;
   int deltaY = rawY - centerY;
@@ -56,16 +105,16 @@ void readJoystick() {
 
   // Obliczanie procentowego odchylenia dla osi X
   if (deltaX >= 0) {
-    percentageX = (float)deltaX / maxDeflectionPositiveX * 100.0;
+    percentageX = pow((float)deltaX / maxDeflectionPositiveX, 1.5) * 100.0;
   } else {
-    percentageX = (float)deltaX / maxDeflectionNegativeX * 100.0;
+    percentageX = -pow((float)-deltaX / maxDeflectionNegativeX, 1.5) * 100.0;
   }
 
   // Obliczanie procentowego odchylenia dla osi Y
   if (deltaY >= 0) {
-    percentageY = (float)deltaY / maxDeflectionPositiveY * 100.0;
+    percentageY = pow((float)deltaY / maxDeflectionPositiveY, 1.5) * 100.0;
   } else {
-    percentageY = (float)deltaY / maxDeflectionNegativeY * 100.0;
+    percentageY = -pow((float)-deltaY / maxDeflectionNegativeY, 1.5) * 100.0;
   }
 
   // Zastosowanie martwej strefy ±5%
@@ -132,9 +181,12 @@ void loop() {
   readJoystick();
 
   // Debugowanie wartości joysticka
+  Serial.print("\r");
   Serial.print("X: ");
+  //Serial.print(rawX);
   Serial.print(data.joystickX);
   Serial.print(" | Y: ");
+  //Serial.print(rawY);
   Serial.print(data.joystickY);
   Serial.print(" | Przyciski: ");
   Serial.println(data.buttonPressed);
