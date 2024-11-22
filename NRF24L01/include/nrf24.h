@@ -15,11 +15,11 @@
 #define GPIO_DEV DT_NODELABEL(gpio1)
 
 /* CE GPIO */
-#define CE_GPIO_PIN    4  // Replace with your actual CE pin number
+#define CE_GPIO_PIN    23  // Replace with your actual CE pin number
 #define CE_GPIO_FLAGS  GPIO_OUTPUT_INIT_HIGH
 
 /* CSN GPIO */
-#define CSN_GPIO_PIN   3  // Replace with your actual CSN pin number
+#define CSN_GPIO_PIN   13  // Replace with your actual CSN pin number
 #define CSN_GPIO_FLAGS GPIO_OUTPUT_INIT_HIGH
 
 /* Global Variables */
@@ -35,5 +35,6 @@ int nrf24l01_write_register(uint8_t reg, const uint8_t *buf, size_t len);
 int nrf24l01_read_register(uint8_t reg, uint8_t *buf, size_t len);
 int nrf24l01_init(void);
 int nrf24l01_receive_payload(uint8_t *buf, size_t len);
+void nrf24l01_test_registers(void);
 
 #endif /* NRF24L01_H */
