@@ -1,94 +1,66 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 
-/* SPI configuration */
+#define SPI_OP (SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE)
+/* SPI Configuration */
 const struct device *spi_dev;
-struct spi_cs_control cs_ctrl;
-struct spi_config spi_cfg;
+struct spi_config spi_cfg = {
+    .frequency = 1000000,                     // SPI frequency (1 MHz)
+    .operation = SPI_OP,                     // SPI operation flags
+    .slave = 0,                              // Slave ID (if applicable)
+    .cs = NULL,                              // No chip select control (managed manually)
+};
 
-/* GPIO for CS control */
-const struct device *gpio_dev;
+// Buffers for SPI communication
+uint8_t tx_buffer[4] = {0xAA, 0xBB, 0xCC, 0xDD}; // Data to send to slave
+uint8_t rx_buffer[4]; // Buffer to store received data
 
-#define CSN_GPIO_PIN 10 // Ustaw numer pinu CSN zgodnie z Twoją konfiguracją
+struct spi_buf tx_buf = {
+    .buf = tx_buffer,
+    .len = sizeof(tx_buffer),
+};
 
-void spi_test_communication(void) {
-    uint8_t tx_buf[] = "Hello ESP32";
-    uint8_t rx_buf[sizeof(tx_buf)];
-    struct spi_buf tx_bufs[] = {
-        {
-            .buf = tx_buf,
-            .len = sizeof(tx_buf),
-        },
-    };
-    struct spi_buf rx_bufs[] = {
-        {
-            .buf = rx_buf,
-            .len = sizeof(rx_buf),
-        },
-    };
-    struct spi_buf_set tx = {
-        .buffers = tx_bufs,
-        .count = 1,
-    };
-    struct spi_buf_set rx = {
-        .buffers = rx_bufs,
-        .count = 1,
-    };
+struct spi_buf rx_buf = {
+    .buf = rx_buffer,
+    .len = sizeof(rx_buffer),
+};
 
-    int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
-    if (ret == 0) {
-        printk("SPI transaction successful.\n");
-        printk("Received data: ");
-        for (size_t i = 0; i < sizeof(rx_buf); i++) {
-            printk("%c", rx_buf[i]);
-        }
-        printk("\n");
-    } else {
-        printk("SPI transaction failed: %d\n", ret);
-    }
-}
+struct spi_buf_set tx_bufs = {
+    .buffers = &tx_buf,
+    .count = 1,
+};
+
+struct spi_buf_set rx_bufs = {
+    .buffers = &rx_buf,
+    .count = 1,
+};
 
 int main(void) {
     printk("SPI Master Test\n");
 
     /* Initialize SPI */
-    spi_dev = DEVICE_DT_GET(DT_NODELABEL(lpspi1)); // Adjust as needed
+    spi_dev = DEVICE_DT_GET(DT_NODELABEL(lpspi1)); // Adjust to match your hardware setup
     if (!device_is_ready(spi_dev)) {
         printk("SPI device not ready\n");
         return -1;
     }
 
-    /* Initialize GPIO for CS */
-    gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
-    if (!device_is_ready(gpio_dev)) {
-        printk("GPIO device not ready\n");
-        return -1;
-    }
-
-    /* Configure CS GPIO */
-    int ret = gpio_pin_configure(gpio_dev, CSN_GPIO_PIN, GPIO_OUTPUT_HIGH);
-    if (ret != 0) {
-        printk("Error configuring CS GPIO: %d\n", ret);
-        return -1;
-    }
-
-    /* Configure CSN for SPI CS control */
-    cs_ctrl.gpio.port = gpio_dev;
-    cs_ctrl.gpio.pin = CSN_GPIO_PIN;
-    cs_ctrl.gpio.dt_flags = GPIO_ACTIVE_LOW;
-    cs_ctrl.delay = 0U;
-
-    /* Configure SPI */
-    spi_cfg.frequency = 1000000U; // 1 MHz
-    spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_OP_MODE_MASTER;
-    spi_cfg.slave = 0;
-    spi_cfg.cs = cs_ctrl; // Użyj adresu struktury cs_ctrl
-
     while (1) {
-        spi_test_communication();
-        k_sleep(K_SECONDS(1));
+        // Use the corrected spi_transceive function
+        int ret = spi_transceive(spi_dev, &spi_cfg, &tx_bufs, &rx_bufs);
+        if (ret) {
+            printk("SPI transceive failed: %d\n", ret);
+        } else {
+            printk("SPI transceive successful. Received: ");
+            for (int i = 0; i < sizeof(rx_buffer); i++) {
+                printk("0x%02X ", rx_buffer[i]);
+            }
+            printk("\n");
+        }
+
+        k_sleep(K_SECONDS(1)); // Delay between transactions
     }
+
     return 0;
 }
