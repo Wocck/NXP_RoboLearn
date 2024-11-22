@@ -198,7 +198,7 @@ Aby oprogramować moduł musimy:
  Oprogramuj moduł tak aby zwrócił informację czy napotkał kolor pochłaniający czy odbijający. Pamiętaj o użyciu poprawnych flag przy konfiguracji pinu wejściowego aby zapobiec niestabilności sygnału, gdy nie ma odbicia. Przykładowy kod znajdziesz w pliku `main_st1140.cpp`.
 
 
- ## Interfejs I2C z użyciem modułu AHT40
+## Interfejs I2C z użyciem modułu AHT40
 
 ### Ćwiczenie
 
@@ -207,3 +207,19 @@ W tym ćwiczeniu zbudujemy bardziej zaawansowany program, który będzie korzyst
 #### Konfiguracja interfejsu I2C
 W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację interfejsu I2C dla modułu AHT40:
 -  
+
+
+## Interfejs SPI z użyciem modułu nRF24L01
+
+### Schemat Połączeń
+
+| **Pin na płytce NXP** | **Pin GPIO (RT1064)** | **Pin na module nRF24L01** | **Opis**              |
+|-----------------------|-----------------------|----------------------------|------------------------|
+| GND                   | GND                   | GND                        | Masa                   |
+| 3.3V                  | 3V                    | VCC                        | Zasilanie (+3.3V)      |
+| GPIO_AD_B0_03         | D8                    | CE                         | Włącz odbiornik        |
+| GPIO_SD_B0_01         | D10                   | CSN                        | Chip Select            |
+| GPIO_SD_B0_00         | D13                   | SCK                        | Zegar SPI              |
+| GPIO_SD_B0_02         | D11                   | MOSI                       | Dane wysyłane do modułu|
+| GPIO_SD_B0_03         | D12                   | MISO                       | Dane odbierane z modułu|
+
