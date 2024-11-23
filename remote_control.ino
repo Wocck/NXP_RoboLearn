@@ -5,8 +5,8 @@
 #define VRX_PIN 4   // Oś X joysticka (GPIO_4 - ADC2_0)
 #define VRY_PIN 2   // Oś Y joysticka (GPIO_2 - ADC2_2)
 #define SW_PIN 16   // Przycisk joysticka (GPIO_16)
-#define CE_PIN 22   // CE modułu nRF24L01 (GPIO_22)
-#define CSN_PIN 5   // CSN modułu nRF24L01 (GPIO_5)
+#define CE_PIN 32   // CE modułu nRF24L01 (GPIO_22)
+#define CSN_PIN 14   // CSN modułu nRF24L01 (GPIO_5)
 
 RF24 radio(CE_PIN, CSN_PIN);
 
