@@ -213,13 +213,14 @@ W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację interfejsu I2C dla modu�
 
 ### Schemat Połączeń
 
-| **Pin na płytce NXP** | **Pin GPIO (RT1064)** | **Pin na module nRF24L01** | **Opis**              |
-|-----------------------|-----------------------|----------------------------|------------------------|
-| GND                   | GND                   | GND                        | Masa                   |
-| 3.3V                  | 3V                    | VCC                        | Zasilanie (+3.3V)      |
-| GPIO_AD_B0_03         | D8                    | CE                         | Włącz odbiornik        |
-| GPIO_SD_B0_01         | D10                   | CSN                        | Chip Select            |
-| GPIO_SD_B0_00         | D13                   | SCK                        | Zegar SPI              |
-| GPIO_SD_B0_02         | D11                   | MOSI                       | Dane wysyłane do modułu|
-| GPIO_SD_B0_03         | D12                   | MISO                       | Dane odbierane z modułu|
+| **Pin na płytce NXP** | **Pin GPIO (RT1064)** | **Mapowanie pinu z DTS**   | **Pin na module nRF24L01** | **Opis**               |
+|-----------------------|-----------------------|----------------------------|----------------------------|------------------------|
+| GND                   | GND                   |                            | GND                        | Masa                   |
+| 3.3V                  | 3V                    |                            | VCC                        | Zasilanie (+3.3V)      |
+| GPIO_AD_B0_03         | D9                    | &gpio1   2                 | CE                         | Włącz odbiornik        |
+| GPIO_SD_B0_01         | D10                   | &gpio3   13                | CSN                        | Chip Select            |
+| GPIO_SD_B0_02         | D11                   | &gpio3   14                | MOSI                       | Dane wysyłane do modułu|
+| GPIO_SD_B0_03         | D12                   | &gpio3   15                | MISO                       | Dane odbierane z modułu|
+| GPIO_SD_B0_00         | D13                   | &gpio3   12                | SCK                        | Zegar SPI              |
+
 
