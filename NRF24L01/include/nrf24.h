@@ -13,5 +13,6 @@ struct DataPacket {
 // Funkcje do obsługi nRF24L01
 int nrf24l01_init(const struct device *spi_dev);
 int nrf24l01_receive_payload(struct DataPacket *packet);
+void nrf24l01_test_registers(void);
 
 #endif // NRF24_H

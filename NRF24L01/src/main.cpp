@@ -18,6 +18,7 @@ int main(void) {
     }
 
     struct DataPacket packet;
+    nrf24l01_test_registers();
     while (1) {
         if (nrf24l01_receive_payload(&packet) == 0) {
             printk("Joystick X: %d\n", packet.joystickX);
