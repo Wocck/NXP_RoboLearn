@@ -224,3 +224,42 @@ W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację interfejsu I2C dla modu�
 | GPIO_SD_B0_00         | D13                   | &gpio3   12                | SCK                        | Zegar SPI              |
 
 
+Moduł na esp32:
+```
+SPI Speedz	= 10 Mhz
+STATUS		= 0x0e RX_DR=0 TX_DS=0 MAX_RT=0 RX_P_NO=7 TX_FULL=0
+RX_ADDR_P0-1	= 0x3130303031 0xc2c2c2c2c2
+RX_ADDR_P2-5	= 0xc3 0xc4 0xc5 0xc6
+TX_ADDR		= 0x3130303031
+RX_PW_P0-6	= 0x20 0x20 0x20 0x20 0x20 0x20
+EN_AA		= 0x3f
+EN_RXADDR	= 0x03
+RF_CH		= 0x4c
+```
+
+Moduł na nxp:
+```
+nRF24L01+ Receiver
+Testing nRF24L01 Registers...
+SPI Write: Cmd=0x00, Data= 0x0B
+CONFIG register (0x00): 0x0B
+SPI Write: Cmd=0x02, Data= 0x01
+EN_RXADDR register (0x02): 0x01
+SPI Write: Cmd=0x05, Data= 0x4C
+RF_CH register (0x05): 0x4C
+SPI Write: Cmd=0x06, Data= 0x26
+RF_SETUP register (0x06): 0x26
+SPI Write: Cmd=0x07, Data= 0x0E
+STATUS register (0x07): 0x0E
+SPI Write: Cmd=0x0A, Data= 0x31 0x30 0x30 0x30 0x31
+RX_ADDR_P0 register (0x0A): 0x31 0x30 0x30 0x30 0x31 
+SPI Write: Cmd=0x11, Data= 0x20
+RX_PW_P0 register (0x11): 0x20
+Register test complete.
+SPI Write: Cmd=0x07, Data= 0x0E
+SPI Write: Cmd=0x07, Data= 0x0E
+SPI Write: Cmd=0x07, Data= 0x0E
+SPI Write: Cmd=0x07, Data= 0x0E
+SPI Write: Cmd=0x07, Data= 0x0E
+SPI Write: Cmd=0x07, Data= 0x0E
+```
