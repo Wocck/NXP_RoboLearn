@@ -7,7 +7,7 @@
 struct DataPacket {
     int8_t joystickX;
     int8_t joystickY;
-    uint8_t buttonPressed : 1;
+    uint8_t buttonPressed;
 };
 
 // Funkcje do obsługi nRF24L01

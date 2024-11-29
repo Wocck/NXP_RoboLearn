@@ -119,7 +119,7 @@ int nrf24l01_init(const struct device *spi) {
     }
     k_sleep(K_MSEC(10));
 
-    uint8_t payload_size = 0x04; // Payload size
+    uint8_t payload_size = sizeof(struct DataPacket); // Payload size
     if (nrf24l01_write_register(RX_PW_P0, &payload_size, 1) != 0) {
         printk("Failed to set payload size\n");
         return -1;

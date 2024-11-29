@@ -18,15 +18,18 @@ int main(void) {
         return -1;
     }
 
+    struct DataPacket packet{-70, 60, 1};
+    uint8_t data[sizeof(packet)];
+    memcpy(data, &packet, sizeof(packet));
 
-    uint8_t data[4] = {'H', 'I', 'I', 'I'}; // Prepare data to send
+    //uint8_t data[4] = {'H', 'I', 'I', 'I'}; // Prepare data to send
     nrf24l01_test_registers();
 
     while (1) {
         // Prepare your payload data
 
         // Send payload
-        if (nrf24l01_send_payload(data, 4) != 0) {
+        if (nrf24l01_send_payload(data, sizeof(data)) != 0) {
             printk("Failed to send payload\n");
         } else {
             printk("Payload sent\n");
