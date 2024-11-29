@@ -94,11 +94,6 @@ int nrf24l01_init(const struct device *spi) {
     k_sleep(K_MSEC(10));
 
     // Initialize nRF24L01
-    uint8_t config = 0x0B; // Power up, PRIM_RX
-    if (nrf24l01_write_register(CONFIG_REG, &config, 1) != 0) {
-        printk("Failed to write CONFIG register\n");
-        return -1;
-    }
 
     uint8_t rf_addr_width = 0x03;
     if (nrf24l01_write_register(SETUP_AW, &rf_addr_width, 1) != 0) {
@@ -112,14 +107,19 @@ int nrf24l01_init(const struct device *spi) {
         return -1;
     }
 
-    uint8_t rx_addr[5] = {0x30, 0x30, 0x30, 0x30, 0x31}; // Pipe Address
+    uint8_t rx_addr[5] = {0xCC, 0xCE, 0xCC, 0xCE, 0xCC}; // Pipe Address
+    if (nrf24l01_write_register(0x10, rx_addr, 5) != 0) {
+        printk("Failed to set RX address\n");
+        return -1;
+    }
+
     if (nrf24l01_write_register(RX_ADDR_P0, rx_addr, 5) != 0) {
         printk("Failed to set RX address\n");
         return -1;
     }
     k_sleep(K_MSEC(10));
 
-    uint8_t payload_size = 32; // Payload size
+    uint8_t payload_size = 0x04; // Payload size
     if (nrf24l01_write_register(RX_PW_P0, &payload_size, 1) != 0) {
         printk("Failed to set payload size\n");
         return -1;
@@ -142,6 +142,12 @@ int nrf24l01_init(const struct device *spi) {
         printk("Failed to disable Auto Acknowledgment\n");
         return -1;
     };
+
+    uint8_t config = 0x0E; // Power up, PRIM_RX
+    if (nrf24l01_write_register(CONFIG_REG, &config, 1) != 0) {
+        printk("Failed to write CONFIG register\n");
+        return -1;
+    }
 
 
     gpio_pin_set(gpio_dev_1, CE_GPIO_PIN, 1); // Enable receiver
@@ -238,5 +244,58 @@ void nrf24l01_test_registers(void) {
         printk("Failed to read RX_PW_P0 register\n");
     }
 
+    if (nrf24l01_read_register(0x10, rx_addr, 5) == 0) {
+        printk("TX register (0x10): ");
+        for (int i = 0; i < 5; i++) {
+            printk("0x%02X ", rx_addr[i]);
+        }
+        printk("\n");
+    } else {
+        printk("Failed to read TX register\n");
+    }
+
     printk("Register test complete.\n");
 }
+
+int nrf24l01_send_payload(const uint8_t *data, size_t len) {
+    // Flush TX FIFO before loading new payload
+    uint8_t cmd = 0xE1; // FLUSH_TX command
+    struct spi_buf flush_buf = { .buf = &cmd, .len = 1 };
+    struct spi_buf_set flush_tx_set = { .buffers = &flush_buf, .count = 1 };
+    spi_transceive(spi_dev, &spi_cfg, &flush_tx_set, NULL);
+
+    cmd = 0xA0; // Write Payload CommandW_TX_PAYLOAD  0xA0
+    tx_buf[0] = cmd;
+    memcpy(&tx_buf[1], data, len);
+
+    struct spi_buf spi_tx = { .buf = tx_buf, .len = len + 1 };
+    struct spi_buf spi_rx = { .buf = rx_buf, .len = len + 1 };
+
+    struct spi_buf_set tx = { .buffers = &spi_tx, .count = 1 };
+    struct spi_buf_set rx = { .buffers = &spi_rx, .count = 1 };
+
+    gpio_pin_set(gpio_dev_1, CE_GPIO_PIN, 0);
+    int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
+    if (ret != 0) {
+        printk("Failed to write payload\n");
+        return ret;
+    }
+
+    gpio_pin_set(gpio_dev_1, CE_GPIO_PIN, 1);
+    k_sleep(K_USEC(15)); // Pulse CE for at least 10µs
+    gpio_pin_set(gpio_dev_1, CE_GPIO_PIN, 0);
+
+    uint8_t value;
+    printk("Testing status Register...\n");
+
+    // Read CONFIG register
+    if (nrf24l01_read_register(0x07, &value, 1) == 0) {
+        printk("STATUS register: 0x%02X\n", value);
+    } else {
+        printk("Failed to read CONFIG register\n");
+    }
+    
+
+    return 0;
+}
+

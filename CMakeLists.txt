@@ -16,8 +16,12 @@ project(serial)
 #target_sources(app PRIVATE HCSR04/main.cpp)
 
 ##### NRF24 #####
-target_sources(app PRIVATE NRF24L01/src/main.cpp NRF24L01/src/nrf24.cpp)
-target_include_directories(app PRIVATE NRF24L01/include)
+#target_sources(app PRIVATE NRF24L01/src/main.cpp NRF24L01/src/nrf24.cpp)
+#target_include_directories(app PRIVATE NRF24L01/include)
 
 ##### SPI__Test #####
 #target_sources(app PRIVATE SPI_Test/main.cpp)
+
+##### NRF24_send_test #####
+target_sources(app PRIVATE NRF24_send_test/src/main.cpp NRF24_send_test/src/nrf24.cpp)
+target_include_directories(app PRIVATE NRF24_send_test/include)
