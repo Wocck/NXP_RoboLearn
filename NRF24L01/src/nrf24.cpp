@@ -17,13 +17,18 @@
 #define RX_PW_P0 0x11
 #define R_RX_PAYLOAD 0x61
 #define FLUSH_RX 0xE2
+#define EN_AA 0x01
 
-static const struct device *gpio_dev;
+static const struct device *gpio_dev_1;
+static const struct device *gpio_dev_3;
 static const struct device *spi_dev;
 
+uint8_t tx_buf[33];
+uint8_t rx_buf[33];
+
 static struct spi_config spi_cfg = {
-    .frequency = 100000,
-    .operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
+    .frequency = 1000000,
+    .operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_HOLD_ON_CS,
     .slave = 0U,
     .cs = {
         .gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(lpspi1), cs_gpios), // Correct GPIO spec
@@ -34,25 +39,21 @@ static struct spi_config spi_cfg = {
 
 static int nrf24l01_write_register(uint8_t reg, const uint8_t *data, size_t len) {
     uint8_t cmd = 0x20 | (reg & 0x1F); // Write command
-    uint8_t tx_buf[len + 1];
     tx_buf[0] = cmd;
     memcpy(&tx_buf[1], data, len);
 
     struct spi_buf spi_tx = { .buf = tx_buf, .len = len + 1 };
     struct spi_buf_set tx = { .buffers = &spi_tx, .count = 1 };
 
-    gpio_pin_set(gpio_dev, CSN_GPIO_PIN, 0);
+    //gpio_pin_set(gpio_dev_3, CSN_GPIO_PIN, 0);
     int ret = spi_write(spi_dev, &spi_cfg, &tx);
-    gpio_pin_set(gpio_dev, CSN_GPIO_PIN, 1);
+    //gpio_pin_set(gpio_dev_3, CSN_GPIO_PIN, 1);
     
     return ret;
 }
 
 static int nrf24l01_read_register(uint8_t reg, uint8_t *data, size_t len) {
     uint8_t cmd = reg & 0x1F; // Read command
-    uint8_t tx_buf[len + 1];
-    uint8_t rx_buf[len + 1];
-
     tx_buf[0] = cmd;
     memset(&tx_buf[1], 0xFF, len);
 
@@ -63,32 +64,41 @@ static int nrf24l01_read_register(uint8_t reg, uint8_t *data, size_t len) {
     struct spi_buf_set rx = { .buffers = &spi_rx, .count = 1 };
 
 
-    gpio_pin_set(gpio_dev, CSN_GPIO_PIN, 0);
+    //gpio_pin_set(gpio_dev_3, CSN_GPIO_PIN, 0);
     int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
-    gpio_pin_set(gpio_dev, CSN_GPIO_PIN, 1);
+    //int ret = spi_read(spi_dev, &spi_cfg, &rx);
+    //gpio_pin_set(gpio_dev_3, CSN_GPIO_PIN, 1);
 
     if (ret == 0) {
         memcpy(data, &rx_buf[1], len); // Omit the command byte
-        printk("SPI Write: Cmd=0x%02X, Data=", cmd);
-        for (size_t i = 0; i < len; i++) {
-            printk(" 0x%02X", data[i]);
-        }
-        printk("\n");
+        // printk("SPI Write: Cmd=0x%02X, Data=", cmd);
+        // for (size_t i = 0; i < len; i++) {
+        //     printk(" 0x%02X", data[i]);
+        // }
+        // printk("\n");
     }
     return ret;
 }
 
 int nrf24l01_init(const struct device *spi) {
     spi_dev = spi;
-    gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
-    if (!gpio_dev) {
-        printk("GPIO device not ready\n");
+    gpio_dev_1 = DEVICE_DT_GET(DT_NODELABEL(gpio1));
+    gpio_dev_3 = DEVICE_DT_GET(DT_NODELABEL(gpio3));
+    
+    if (!gpio_dev_1) {
+        printk("GPIO_1 device not ready\n");
+        return -1;
+    }
+
+    if (!gpio_dev_3) {
+        printk("GPIO_3 device not ready\n");
         return -1;
     }
 
     // Configure CE and CSN pins
-    gpio_pin_configure(gpio_dev, CE_GPIO_PIN, GPIO_OUTPUT_LOW);
-    gpio_pin_configure(gpio_dev, CSN_GPIO_PIN, GPIO_OUTPUT_HIGH);
+    gpio_pin_configure(gpio_dev_1, CE_GPIO_PIN, GPIO_OUTPUT_LOW);
+    //gpio_pin_configure(gpio_dev_3, CSN_GPIO_PIN, GPIO_OUTPUT_HIGH);
+    k_sleep(K_MSEC(10));
 
     // Initialize nRF24L01
     uint8_t config = 0x0B; // Power up, PRIM_RX
@@ -97,7 +107,7 @@ int nrf24l01_init(const struct device *spi) {
         return -1;
     }
 
-    uint8_t rf_addr_width = 5;
+    uint8_t rf_addr_width = 0x03;
     if (nrf24l01_write_register(SETUP_AW, &rf_addr_width, 1) != 0) {
         printk("Failed to set Addresses Width\n");
         return -1;
@@ -109,12 +119,23 @@ int nrf24l01_init(const struct device *spi) {
         return -1;
     }
 
-    uint8_t rx_addr[5] = { 0x31, 0x30, 0x30, 0x30, 0x31 }; // Pipe Address
+    uint8_t rx_addr[5] = {0x31, 0x33, 0x32, 0x30, 0x31}; // Pipe Address
     if (nrf24l01_write_register(RX_ADDR_P0, rx_addr, 5) != 0) {
         printk("Failed to set RX address\n");
         return -1;
     }
     k_sleep(K_MSEC(10));
+
+    uint8_t rx_addr_read[6];
+    if (nrf24l01_read_register(RX_ADDR_P0, rx_addr_read, 5) == 0) {
+        printk("RX_ADDR_P0 after write: ");
+        for (int i = 0; i < 6; i++) {
+            printk("0x%02X ", rx_addr_read[i]);
+        }
+        printk("\n");
+    } else {
+        printk("Failed to read RX_ADDR_P0 after write\n");
+    }
 
     uint8_t payload_size = 32; // Payload size
     if (nrf24l01_write_register(RX_PW_P0, &payload_size, 1) != 0) {
@@ -128,13 +149,20 @@ int nrf24l01_init(const struct device *spi) {
         return -1;
     }
 
-    uint8_t rf_setup = 0x26; // 250kbps, 0dBm
+    uint8_t rf_setup = 0x25; // 250kbps, 0dBm
     if (nrf24l01_write_register(RF_SETUP, &rf_setup, 1) != 0) {
         printk("Failed to set RF setup\n");
         return -1;
     }
 
-    //gpio_pin_set(gpio_dev, CE_GPIO_PIN, 1); // Enable receiver
+    uint8_t en_aa = 0x00; // Disable Auto Acknowledgment
+    if (nrf24l01_write_register(EN_AA, &en_aa, 1) != 0) {
+        printk("Failed to disable Auto Acknowledgment\n");
+        return -1;
+    };
+
+
+    gpio_pin_set(gpio_dev_1, CE_GPIO_PIN, 1); // Enable receiver
     k_sleep(K_MSEC(10));
     return 0;
 }
@@ -223,6 +251,11 @@ void nrf24l01_test_registers(void) {
         printk("Failed to read RX_PW_P0 register\n");
     }
 
+    if (nrf24l01_read_register(SETUP_AW, &value, 1) == 0) {
+        printk("Addr Width register (0x03): 0x%02X\n", value);
+    } else {
+        printk("Failed to read RX_PW_P0 register\n");
+    }
+
     printk("Register test complete.\n");
 }
-

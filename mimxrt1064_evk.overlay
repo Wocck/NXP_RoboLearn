@@ -13,6 +13,10 @@
     status = "okay";
 };
 
+&gpio1 {
+    status = "okay";
+};
+
 &lpspi1 {
     status = "okay";
     cs-gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;

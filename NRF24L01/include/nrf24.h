@@ -8,7 +8,7 @@ struct DataPacket {
     int16_t joystickX;
     int16_t joystickY;
     uint8_t buttonPressed;
-};
+}__attribute__((packed));
 
 // Funkcje do obsługi nRF24L01
 int nrf24l01_init(const struct device *spi_dev);
