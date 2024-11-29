@@ -27,7 +27,7 @@ uint8_t tx_buf[33];
 uint8_t rx_buf[33];
 
 static struct spi_config spi_cfg = {
-    .frequency = 1000000,
+    .frequency = 100000,
     .operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_HOLD_ON_CS,
     .slave = 0U,
     .cs = {
@@ -43,10 +43,13 @@ static int nrf24l01_write_register(uint8_t reg, const uint8_t *data, size_t len)
     memcpy(&tx_buf[1], data, len);
 
     struct spi_buf spi_tx = { .buf = tx_buf, .len = len + 1 };
+    struct spi_buf spi_rx = { .buf = rx_buf, .len = len + 1 };
+    
     struct spi_buf_set tx = { .buffers = &spi_tx, .count = 1 };
+    struct spi_buf_set rx = { .buffers = &spi_rx, .count = 1 };
 
     //gpio_pin_set(gpio_dev_3, CSN_GPIO_PIN, 0);
-    int ret = spi_write(spi_dev, &spi_cfg, &tx);
+    int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
     //gpio_pin_set(gpio_dev_3, CSN_GPIO_PIN, 1);
     
     return ret;
@@ -64,18 +67,45 @@ static int nrf24l01_read_register(uint8_t reg, uint8_t *data, size_t len) {
     struct spi_buf_set rx = { .buffers = &spi_rx, .count = 1 };
 
 
-    //gpio_pin_set(gpio_dev_3, CSN_GPIO_PIN, 0);
     int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
-    //int ret = spi_read(spi_dev, &spi_cfg, &rx);
-    //gpio_pin_set(gpio_dev_3, CSN_GPIO_PIN, 1);
 
     if (ret == 0) {
         memcpy(data, &rx_buf[1], len); // Omit the command byte
-        // printk("SPI Write: Cmd=0x%02X, Data=", cmd);
-        // for (size_t i = 0; i < len; i++) {
-        //     printk(" 0x%02X", data[i]);
-        // }
-        // printk("\n");
+    }
+    return ret;
+}
+
+static int nrf24l01_read_multi_register(uint8_t reg, uint8_t *data, size_t len) {
+    uint8_t cmd = reg & 0x1F; // Read command
+
+    uint8_t tx_buffer[33] = {0};
+    tx_buffer[0] = cmd;
+    uint8_t rx_buffer[33] = {0};
+    struct spi_buf tx_buf = {
+    .buf = tx_buffer,
+    .len = sizeof(tx_buffer),
+    };
+
+    struct spi_buf rx_buf = {
+        .buf = rx_buffer,
+        .len = sizeof(rx_buffer),
+    };
+
+    struct spi_buf_set tx_bufs = {
+        .buffers = &tx_buf,
+        .count = 1,
+    };
+
+    struct spi_buf_set rx_bufs = {
+        .buffers = &rx_buf,
+        .count = 1,
+    };
+
+    int ret = spi_transceive(spi_dev, &spi_cfg, &tx_bufs, &rx_bufs);
+
+    if (ret == 0) {
+    } else {
+        printk("SPI Read Error: %d\n", ret);
     }
     return ret;
 }
@@ -119,23 +149,12 @@ int nrf24l01_init(const struct device *spi) {
         return -1;
     }
 
-    uint8_t rx_addr[5] = {0x31, 0x33, 0x32, 0x30, 0x31}; // Pipe Address
+    uint8_t rx_addr[5] = {0x11, 0x22, 0x33, 0x44, 0x55}; // Pipe Address
     if (nrf24l01_write_register(RX_ADDR_P0, rx_addr, 5) != 0) {
         printk("Failed to set RX address\n");
         return -1;
     }
     k_sleep(K_MSEC(10));
-
-    uint8_t rx_addr_read[6];
-    if (nrf24l01_read_register(RX_ADDR_P0, rx_addr_read, 5) == 0) {
-        printk("RX_ADDR_P0 after write: ");
-        for (int i = 0; i < 6; i++) {
-            printk("0x%02X ", rx_addr_read[i]);
-        }
-        printk("\n");
-    } else {
-        printk("Failed to read RX_ADDR_P0 after write\n");
-    }
 
     uint8_t payload_size = 32; // Payload size
     if (nrf24l01_write_register(RX_PW_P0, &payload_size, 1) != 0) {
