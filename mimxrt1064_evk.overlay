@@ -1,0 +1,23 @@
+&lpi2c1 {
+    status = "okay";
+    pinctrl-0 = <&pinmux_lpi2c1>;
+    pinctrl-names = "default";
+
+    aht20: aht20@70 {
+        compatible = "aosong,aht20";
+        reg = <0x70>;
+    };
+};
+
+&gpio3 {
+    status = "okay";
+};
+
+&gpio1 {
+    status = "okay";
+};
+
+&lpspi1 {
+    status = "okay";
+    cs-gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
+};
