@@ -9,12 +9,12 @@
 #define CSN_PIN 5   // CSN modułu nRF24L01 (GPIO_5)
 #define LED 2
 
-RF24 radio(CE_PIN, CSN_PIN);
+RF24 radio(CE_PIN, CSN_PIN, 100000);
 
-struct DataPacket {
-  int joystickX;
-  int joystickY;   
-  bool buttonPressed;
+struct __attribute__((packed)) DataPacket {
+  int8_t joystickX;
+  int8_t joystickY;
+  uint8_t buttonPressed;
 };
 
 DataPacket data;
@@ -25,7 +25,7 @@ int maxDeflectionPositiveY, maxDeflectionNegativeY;
 
 int rawX;
 int rawY;
-const byte address[6] = {0x31, 0x30, 0x30, 0x30, 0x30};
+const byte address[5] = {0xCC, 0xCE, 0xCC, 0xCE, 0xCC};
 
 void calibrateJoystick() {
   Serial.println("Kalibracja joysticka. Proszę nie ruszać joysticka.");
@@ -87,7 +87,7 @@ void readJoystick() {
   if (valueY > 90) valueY = 90;
 
   // Przywrócenie znaku odchylenia
-  // Mixed X and Y so that direction of remote is proper (up and down)
+  // Mixed X and Y so that orientation of remote is proper (up and down)
   data.joystickX = valueY * ((percentageY >= 0) ? 1 : -1);
   data.joystickY = valueX * ((percentageX >= 0) ? 1 : -1);
 
@@ -113,17 +113,15 @@ void initializeRF24() {
   radio.setPALevel(RF24_PA_HIGH);
   radio.setDataRate(RF24_250KBPS);
   radio.setChannel(76);
-  radio.setPayloadSize(32);
+  radio.setPayloadSize(3);
   radio.openWritingPipe(address);
-  
-
-  Serial.println("Moduł nRF24L01 gotowy.");
-  radio.stopListening();
+  Serial.println("Moduł nRF24L01 gotowy:");
   radio.printDetails();
 }
 
 void sendData() {
   bool success = radio.write(&data, sizeof(data));
+  Serial.println(sizeof(data));
   if (success) {
     Serial.println("Dane wysłane.");
   } else {
@@ -161,5 +159,5 @@ void loop() {
   // Wysyłanie danych
   sendData();
 
-  delay(1000);  // Mniejsze opóźnienie dla płynniejszego odczytu
+  delay(100);  // Mniejsze opóźnienie dla płynniejszego odczytu
 }
