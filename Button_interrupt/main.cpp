@@ -4,15 +4,11 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
-#define USER_LED_GPIO_NODE DT_NODELABEL(gpio1)  // GPIO dla LED
-#define BUTTON_GPIO_NODE DT_NODELABEL(gpio5)   // GPIO dla przycisku
-#define LED_PIN 9                              // Pin LED
-#define BUTTON_PIN 0                           // Pin przycisku
-#define DEBOUNCE_DELAY_MS 50                   // Czas debounce w milisekundach
+#define DEBOUNCE_DELAY_MS 30 // Czas debounce w milisekundach
 
-// Globalne wskaźniki do urządzeń GPIO
-static const struct device *led;
-static const struct device *button;
+// Wskaźniki do urządzeń GPIO
+static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(DT_NODELABEL(user_button), gpios);
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_NODELABEL(green_led), gpios);
 
 // Deklaracja struktury callback dla GPIO
 static struct gpio_callback button_cb_data;
@@ -32,62 +28,56 @@ static void button_pressed(const struct device *dev, struct gpio_callback *cb, u
 
     last_press_time = current_time; // Zapisz czas przerwania
 
-    static bool led_state = false; // Lokalny stan LED
-
-    // Zmiana stanu LED
-    led_state = !led_state;
-    gpio_pin_set(led, LED_PIN, led_state);
+    gpio_pin_toggle_dt(&led);
 
     // Informacja diagnostyczna
-    printk("Przycisk wciśnięty! Zmieniam stan LED na: %d\n", led_state);
+    printk("Przycisk wciśnięty! Zmieniam stan LED\n");
 }
 
 // Konfiguracja LED
 void configure_led(void)
 {
-    led = DEVICE_DT_GET(USER_LED_GPIO_NODE);
-    if (!device_is_ready(led)) {
+    if (!device_is_ready(led.port)) {
         printk("Błąd: GPIO dla LED nie jest gotowe!\n");
         return;
     }
 
-    // Konfiguracja pinu LED jako wyjście
-    int ret = gpio_pin_configure(led, LED_PIN, GPIO_OUTPUT | GPIO_ACTIVE_LOW);
+    // Konfiguracja LED jako wyjście
+    int ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT);
     if (ret < 0) {
-        printk("Błąd: nie udało się skonfigurować pinu LED!\n");
+        printk("Błąd: nie udało się skonfigurować LED!\n");
     }
 
-    gpio_pin_set(led, LED_PIN, 0); // Wyłącz LED na start
+    gpio_pin_set_dt(&led, 0); // Wyłącz LED na start
 }
 
 // Konfiguracja przycisku
 void configure_button(void)
 {
-    button = DEVICE_DT_GET(BUTTON_GPIO_NODE);
-    if (!device_is_ready(button)) {
+    if (!device_is_ready(button.port)) {
         printk("Błąd: GPIO dla przycisku nie jest gotowe!\n");
         return;
     }
 
-    // Konfiguracja pinu przycisku jako wejście z przerwaniami
-    int ret = gpio_pin_configure(button, BUTTON_PIN, GPIO_INPUT | GPIO_PULL_UP);
+    // Konfiguracja przycisku jako wejście z przerwaniami
+    int ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
     if (ret < 0) {
-        printk("Błąd: nie udało się skonfigurować pinu przycisku!\n");
+        printk("Błąd: nie udało się skonfigurować przycisku!\n");
         return;
     }
 
     // Konfiguracja przerwań dla przycisku na zbocze opadające
-    ret = gpio_pin_interrupt_configure(button, BUTTON_PIN, GPIO_INT_EDGE_TO_ACTIVE);
+    ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_INACTIVE);
     if (ret < 0) {
         printk("Błąd: nie udało się skonfigurować przerwania dla przycisku!\n");
         return;
     }
 
     // Zarejestruj callback do obsługi przerwań
-    gpio_init_callback(&button_cb_data, button_pressed, BIT(BUTTON_PIN));
-    gpio_add_callback(button, &button_cb_data);
+    gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));
+    gpio_add_callback(button.port, &button_cb_data);
 
-    printk("Przycisk skonfigurowany na pinie %d\n", BUTTON_PIN);
+    printk("Przycisk skonfigurowany: %s\n", button.port->name);
 }
 
 // Główna funkcja aplikacji
@@ -102,6 +92,5 @@ int main(void)
     while (1) {
         k_sleep(K_FOREVER); // Proces główny pozostaje w uśpieniu
     }
-
     return 0;
 }
