@@ -20,8 +20,9 @@
 /**
  * @brief GPIO pin definitions for the nRF24L01+ module.
  */
-#define CE_GPIO_PIN 2 ///< Pin for Chip Enable (CE), used to control RX/TX modes. GPIO_AD_B0_03 (D9)
+#define CE_GPIO_PIN 2 ///< Pin for Chip Enable (CE), used to control RX/TX modes. GPIO_AD_B0_02 (D9)
 #define CSN_GPIO_PIN 13 ///< Pin for Chip Select Not (CSN), used to control SPI communication. GPIO_SD_B0_01 (D10)
+#define IRQ_GPIO_PIN 3 ///< Pin for Interrupt Request (IRQ), used to signal data received. GPIO_AD_B0_03 (D8)
 
 /**
  * @struct DataPacket
@@ -42,6 +43,9 @@ struct DataPacket {
  */
 class NRF24 {
 private:
+    DataPacket current_packet; ///< Last data packet received
+    const struct device* irq_dev; ///< GPIO device for IRQ pin
+    struct gpio_callback irq_cb_data; ///< GPIO callback structure for IRQ
     const struct device* gpio_dev_1; ///< GPIO device for CE pin
     const struct device* spi_dev; ///< SPI device for communication
     struct spi_config spi_cfg; ///< SPI configuration
@@ -73,6 +77,21 @@ private:
      */
     int read_register(uint8_t reg, uint8_t* data, size_t len);
 
+    /**
+     * @brief Callback function to handle IRQ events from nRF24L01+.
+     * @param dev Pointer to the GPIO device.
+     * @param cb Pointer to the callback structure.
+     * @param pins Bitmask of the pins that triggered the interrupt.
+     */
+    static void irq_handler(const struct device* dev, struct gpio_callback* cb, uint32_t pins);
+
+    /**
+     * @brief Handle IRQ events from nRF24L01+.
+     * @return 0 on success, negative error code otherwise.
+     */
+    int handle_irq();
+
+
 public:
      /**
      * @brief Constructor for the NRF24 class.
@@ -100,9 +119,22 @@ public:
     int receive_payload(DataPacket* packet);
 
     /**
+     * @brief Configure IRQ pin and enable interrupts.
+     * @return 0 on success, negative error code otherwise.
+     */
+    int configure_irq();
+
+    /**
      * @brief Test and print the values of nRF24L01+ registers.
      */
     void test_registers();
+
+    /**
+     * @brief Get the current packet object
+     * 
+     * @return DataPacket 
+     */
+    DataPacket get_current_packet();
 };
 
 #endif // NRF24_H

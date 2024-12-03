@@ -15,7 +15,7 @@
 #define TX_ADDR 0x10
 
 // Maski i wartości
-#define CONFIG_DEFAULT 0x0F
+#define CONFIG_DEFAULT 0x3F
 #define RF_SETUP_DEFAULT 0x26
 #define EN_RXADDR_DEFAULT 0x01
 #define ADDR_WIDTH_DEFAULT 0x03
@@ -26,16 +26,13 @@
 #define RX_DR_FLAG 0x40
 #define PIPE_ADDR {0xCC, 0xCE, 0xCC, 0xCE, 0xCC}
 
-// Konstruktor klasy NRF24
-NRF24::NRF24(const struct device* spi) : spi_dev(nullptr), gpio_dev_1(nullptr) {
-    // Wywołanie set_device w konstruktorze
+NRF24::NRF24(const struct device* spi) : gpio_dev_1(nullptr), spi_dev(nullptr) {
     if (spi && set_device(spi) == 0) {
         printk("SPI device set successfully\n");
     } else {
         printk("Failed to set SPI device in constructor\n");
     }
 
-    // Inicjalizacja konfiguracji SPI
     spi_cfg.frequency = 100000;
     spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_HOLD_ON_CS;
     spi_cfg.slave = 0U;
@@ -43,7 +40,7 @@ NRF24::NRF24(const struct device* spi) : spi_dev(nullptr), gpio_dev_1(nullptr) {
     spi_cfg.cs.delay = 0U;
 }
 
-// Funkcja do ustawiania urządzenia SPI
+
 int NRF24::set_device(const struct device* spi) {
     if (!spi) {
         printk("SPI device is not provided\n");
@@ -82,7 +79,7 @@ int NRF24::write_register(uint8_t reg, const uint8_t* data, size_t len) {
     return spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
 }
 
-// Funkcja do odczytu z rejestru
+
 int NRF24::read_register(uint8_t reg, uint8_t* data, size_t len) {
     uint8_t cmd = reg & 0x1F;
     tx_buf[0] = cmd;
@@ -99,6 +96,34 @@ int NRF24::read_register(uint8_t reg, uint8_t* data, size_t len) {
         memcpy(data, &rx_buf[1], len);
     }
     return ret;
+}
+
+void NRF24::irq_handler(const struct device* dev, struct gpio_callback* cb, uint32_t pins) {
+    NRF24* nrf24_instance = static_cast<NRF24*>(CONTAINER_OF(cb, NRF24, irq_cb_data));
+    nrf24_instance->handle_irq();
+}
+
+int NRF24::handle_irq() {
+    uint8_t status;
+    if (read_register(STATUS_REG, &status, 1) != 0) {
+        printk("Failed to read STATUS register\n");
+        return -1;
+    }
+    printk("interupt and\n");
+
+    // Obsługa zdarzeń
+    if (status & RX_DR_FLAG) {
+        printk("Payload received\n");
+
+        // Aktualizuj current_packet
+        receive_payload(&current_packet);
+    }
+
+    // Wyczyść flagi STATUS
+    uint8_t clear_flags = status & 0x70;
+    write_register(STATUS_REG, &clear_flags, 1);
+
+    return 0;
 }
 
 void NRF24::reset(uint8_t reg) {
@@ -176,6 +201,13 @@ int NRF24::init() {
     uint8_t status_clear = STATUS_CLEAR;
     write_register(STATUS_REG, &status_clear, 1);
 
+    // Konfiguracja IRQ
+    int ret = configure_irq();
+    if (ret < 0) {
+        printk("Failed to configure IRQ\n");
+        return ret;
+    }
+
     gpio_pin_set(gpio_dev_1, CE_GPIO_PIN, 1);
     k_sleep(K_MSEC(2));
     return 0;
@@ -212,6 +244,34 @@ int NRF24::receive_payload(DataPacket* packet) {
         return ret;
     }
     return -1;
+}
+
+int NRF24::configure_irq() {
+    irq_dev = DEVICE_DT_GET(DT_NODELABEL(gpio1)); // GPIO dla IRQ
+    if (!device_is_ready(irq_dev)) {
+        printk("IRQ GPIO device not ready\n");
+        return -1;
+    }
+
+    // Konfiguracja pinu IRQ jako wejścia z przerwaniami
+    int ret = gpio_pin_configure(irq_dev, IRQ_GPIO_PIN, GPIO_INPUT | GPIO_PULL_UP);
+    if (ret < 0) {
+        printk("Failed to configure IRQ pin\n");
+        return ret;
+    }
+
+    ret = gpio_pin_interrupt_configure(irq_dev, IRQ_GPIO_PIN, GPIO_INT_EDGE_TO_INACTIVE);
+    if (ret < 0) {
+        printk("Failed to configure IRQ interrupt\n");
+        return ret;
+    }
+
+    // Rejestracja callbacku dla IRQ
+    gpio_init_callback(&irq_cb_data, irq_handler, BIT(IRQ_GPIO_PIN));
+    gpio_add_callback(irq_dev, &irq_cb_data);
+
+    printk("IRQ configured successfully\n");
+    return 0;
 }
 
 void NRF24::test_registers() {
@@ -279,5 +339,9 @@ void NRF24::test_registers() {
     }
 
     printk("Register test complete.\n");
+}
+
+DataPacket NRF24::get_current_packet() {
+    return current_packet;
 }
 
