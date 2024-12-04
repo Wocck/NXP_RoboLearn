@@ -133,6 +133,147 @@ W projekcie `Button_interrupt` zaimplementuj mechanizm debouncingu. Zdefinuj sta
 k_uptime_get_32(); // Pobierz czas w ms
 ```
 
+---
+
+## **Moduł NRF24L01 i przerwania**
+
+Wróćmy teraz do implementacji komunikacji szeregowej z modułem NRF24L01. Na poprzednim laboratorium korzystaliśmy z ciągłego odpytywania moduły w pętli głównej czy pojawiły się jakieś nowe dane. Działało to w ten sposób:
+1. Odczytanie wartości rejestru `STATUS (0x07)`
+2. Sprawdzenie czy flaga `RX_DR` w rejestrze jest ustawiona (czy nowe dane się pojawiły)
+3. Jeżeli tak to wysyłamy komendę `R_RX_PAYLOAD (0x61)` aby pobrać dane z bufora odbiorczego
+4. Po odebebraniu danych przez interfejs SPI ustawiamy flagę `RX_DR` w rejestrze `STATUS` na 1 aby ją zresetować
+Następnie powtarzamy cały proces ponieważ metoda wywoływana jest w pętli. 
+
+Jeżeli zajrzymy do dokumentacji modułu NRF24L01 to znajdziemy fragment opisujący jak powinniśmy obsłóżyć przerwania:
+```
+The RX_DR IRQ is asserted by a new packet arrival event. The procedure for handling this interrupt should be: 
+1) Read payload through SPI. 
+2) Clear RX_DR IRQ.
+3) Read FIFO_STATUS to check if there are more payloads available in RX_FIFO.
+4) If there are more data in RX FIFO, repeat from step 1).
+```
+Oznacza to że w naszym poprzednim programie poprawnie obsługiwaliśmy flagę RX_DR a nie musieliśmy sprawdzać statusu rejestru FIFO_STATUS, ponieważ nie było ryzyka przepełnienia gdy cały czas odczytywaliśmy dane z bufora odbiorczego.
+
+W przerwaniach będziemy musieli do tego podejść innaczej tak jak jest to opisane w dokumentacji. To znaczy że dla każdego przerwania będziemy musieli w pętli sprawdzać czy kolejka FIFO zawiera jeszcze jakieś dane i jeżeli tak to powinniśmy je odczytać. 
+
+### Krok 1: Podłączenie pinu IRQ do pinu GPIO
+
+Pierwszym krokiem jest podłączenie pinu IRQ modułu NRF24L01 do pinu GPIO naszego mikrokontrolera. W naszym przypadku będzie to pin `D8` (GPIO1 3).
+
+![NRF24L01 Pinout](images/nRF24L01.png)
+
+### Krok 2: Konfiguracja przerwania GPIO 
+
+Aby poprawnie skonfigurować pin GPIO w naszym mikrokontrolerze musimy dowiedzieć się z dokumentacji jak działa pin IRQ modułu radiowego. Oto najważniejsze informacje:
+- Pin jest typu `Open-Drain Output` (innaczej open collector).
+- Pin jest domyślnie w stanie wysokim i gdy moduł odbierze dane ściąga pin do stanu niskiego na około 100us.
+- Ponieważ pin jest *Open-Drain* wymaha użycia rezystora `Pull-Up` aby zapewnić że linia IRQ zostanie podciągnięta do stanu wysokiego kiedy moduł nie ściąga jej do stanu niskiego.
+
+Biorąc pod uwagę powyższe informacje nasz pin gpio należy skonfigurować w następujący sposób:
+```C++
+int ret = gpio_pin_configure(irq_dev, IRQ_GPIO_PIN, GPIO_INPUT | GPIO_PULL_UP);
+ret = gpio_pin_interrupt_configure(irq_dev, IRQ_GPIO_PIN, GPIO_INT_EDGE_TO_INACTIVE);
+```
+Flaga `GPIO_INT_EDGE_TO_INACTIVE` sprawia że przerwanie zostanie wywołane gdy stan pinu zmieni się z wysokiego na niski.
+
+### Krok 3: Zdefiniowanie ISR obsługującej przerwanie
+
+Jak zobaczyliśmy w dokumentacji modułu nasza funckja obsługujaca przerwanie powinna wyglądać mniej więcej tak:
+
+```C++
+static void irq_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins) {
+    printk("IRQ pin triggered!\n"); // nie używaj printk w ISR!!
+
+    while (true) {
+        // Sprawdź status rejestru FIFO
+        uint8_t fifo_status;
+        if (radio.read_register(0x17, &fifo_status, 1) != 0) { // FIFO_STATUS register
+            printk("Failed to read FIFO_STATUS register\n");
+            break;
+        }
+
+        if (fifo_status & 0x01) { // RX_EMPTY bit
+            // Jeśli FIFO RX jest puste, kończymy obsługę przerwania
+            break;
+        }
+
+        // Jeśli FIFO nie jest puste, odbierz dane
+        struct DataPacket packet;
+        if (radio.receive_payload(&packet) == 0) {
+            printk("Received packet: joystickX=%d, joystickY=%d, buttonPressed=%d\n",
+                   packet.joystickX, packet.joystickY, packet.buttonPressed);
+        } else {
+            printk("Failed to receive payload\n");
+        }
+
+        // Wyczyść flagę RX_DR w STATUS
+        uint8_t clear_flags = 0x40; // RX_DR
+        radio.write_register(0x07, &clear_flags, 1);
+    }
+}
+```
+
 ## **Ćwiczenie 2**
 
-Wróćmy do implementacji komunikacji szerwgoej z modułem NRF24L01. Dokończ implementację funckji callback która odbirze dane wysyłane z joysticka. Wypisz na konsoli wartości otrzymanych danych.
+W projekcie `NRF24L01_example` zaimplementuj obsługę przerwań dla modułu NRF24L01. Skonfiguruj pin IRQ jako wejście z rezystorem Pull-Up oraz zdefiniuj funkcję obsługi przerwania. Zainicjuj i dodaj callback do pinu GPIO tak jak w **Ćwiczenie 1**. W funkcji obsługi przerwania odczytaj dane z bufora odbiorczego i wypisz je w konsoli. Sprawdź czy kod działa poprawnie i zapisz wyniki...
+
+---
+
+## Dlaczego nie działa?
+
+Prawdopodonie w trakcie testów zauważyłeś że przerwania nie są obsługiwane poprawnie. W konsoli nie pojawiają się informacje o odebraniu pakietu. Wynik który otrzymaliśmy prawdopodobnie wyglądał tak:
+```
+IRQ pin triggered!
+Failed to read FIFO_STATUS register
+```
+
+Powodem dla którego kod nie zadziałał jest nasz ISR w ktorym przeprowadzamy zabronione działania. ISR powinna spełniać następujące warunki:
+1. Funkcja obsługi przerwania musi być szybka (krótka)
+2. W ISR nie można bezpośrednio korzystać z operacji wymagających synchronizacji lub dostępu do zasobów współdzielonych, takich jak na przykład SPI.
+
+Wywołanie operacji SPI (radio.read_register) w ISR powodowało, że sterownik SPI nie mógł poprawnie zsynchronizować swojego działania, co prowadziło do błędów, takich jak brak odpowiedzi modułu nRF24L01+. Sterownik SPI w Zephyrze może wymagać:
+- Przerwań do obsługi swojej komunikacji – te przerwania są blokowane, gdy ISR działa.
+- Mutexów lub semaforów do synchronizacji – mechanizmy te nie działają w ISR.
+
+### Rozwiązanie
+
+Rozwiązaniem powyższego problemu jest mechanizm **Workqueue**. Pozwala on odłożyć wykonanie zadania do czasu, aż system wróci do kontekstu wątku (czyli poza ISR). Zadania w work queue są wykonywane w kontekście wątku, co eliminuje ograniczenia ISR.
+
+Podstawowe pojęcia:
+- `k_work` - obiekt reprezentujacy pojedyncze zadanie, które może być wykonane w ramach kolejki zadań. Każde zadanie ma przypisaną funkcję (handler), która zostanie wykonana po zleceniu pracy.
+- `system workqueue` - Wbudowana w Zephyr RTOS kolejka zadań, która działa w kontekście wątku systemowego. Zadania w tej kolejce są wykonywane w kolejności ich zgłoszenia.
+- `k_work_submit()` - funkcja do dodania zadania (`k_work`) do kolejki zadań. Zadanie zostanie wykonane, gdy system na to pozwoli (wątek nie będzie zajęty innymi operacjami).
+
+Użycie w kodzie:
+```C++
+struct k_work my_work;
+
+void work_handler(struct k_work *work) {
+    printk("Praca w work queue: Wykonuję zadanie!\n");
+}
+
+static void irq_handler(...) {
+    printk("IRQ pin triggered!\n");
+
+    k_work_submit(&work); // Zgłoś zadanie do wykonania
+}
+
+void main(void) {
+    k_work_init(&my_work, work_handler);
+}
+```
+
+## **Ćwiczenie 3**
+
+Zdefiniuj w kodzie obsługę przerwania za pomocą workqueue. Zamiast odczytywać dane z modułu NRF24L01 w ISR, zleć to zadanie do wykonania w workqueue. Sprawdź czy kod działa poprawnie i zapisz wyniki...
+
+1. Przenieś odczytanie danych w całości z irq_handler() do nowej funckji `void process_irq_work(struct k_work *work)`
+2. W `irq_handler` zamiast odczytywać dane z modułu NRF24L01 zleć to zadanie do wykonania w workqueue.
+
+---
+
+## **Ćwiczenie 4** - Update biblioteki `NRF24`
+
+Teraz należy działający kod przerwań przenieść do biblioteki `NRF24`...
+
+**Uwaga** moduł czasem nie odbiera poprawnie przerwań ponieważ nadajnik stale nadaje dane. Po flashowaniu należy wyłączyć i włączyć zasilanie aby moduł jeszcze raz się uruchomił.

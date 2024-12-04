@@ -8,6 +8,10 @@ project(interrupts)
 ##### IRQ #####
 #target_sources(app PRIVATE ISR_Api/main.cpp)
 
-##### NRF24_IRQ #####
-target_sources(app PRIVATE NRF24_IRQ/src/main.cpp NRF24_IRQ/src/nrf24.cpp)
-target_include_directories(app PRIVATE NRF24_IRQ/include)
+##### NRF24_example #####
+# target_sources(app PRIVATE Projects/NRF24_example/src/main.cpp Projects/NRF24_example/src/nrf24.cpp)
+# target_include_directories(app PRIVATE Projects/NRF24_example/include)
+
+##### NRF24 #####
+target_sources(app PRIVATE Projects/NRF24/src/main.cpp Projects/NRF24/src/nrf24.cpp)
+target_include_directories(app PRIVATE Projects/NRF24/include)
