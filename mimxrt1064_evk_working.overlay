@@ -30,20 +30,9 @@
 
 &pinctrl {
     pinmux_flexpwm4: pinmux_flexpwm4 {
-        group0 {
-            pinmux = <&iomuxc_gpio_ad_b1_08_flexpwm4_pwma0_overlay>;
-            drive-strength = "r0-4";
-            bias-pull-up;
-            bias-pull-up-value = "47k";
-            slew-rate = "slow";
-            nxp,speed = "100-mhz";
-        };
-    };
-};
-
-&iomuxc {
-    iomuxc_gpio_ad_b1_08_flexpwm4_pwma0_overlay: IOMUXC_GPIO_AD_B1_08_FLEXPWM4_PWMA00 {
-        pinmux = <0x401F811C 0x1 0x401F8494 0x1 0x401F830C>;
+        pinmux = <
+            0x401F811C 0x1 0x401F8494 0x1 0x401F830C 0x10B0
+        >;
     };
 };
 

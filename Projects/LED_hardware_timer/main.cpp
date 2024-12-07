@@ -1,57 +1,64 @@
 #include <zephyr/kernel.h>
-#include <zephyr/device.h>
+#include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/pwm.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/sys/util.h>
-
-// Wskaźniki do urządzeń GPIO i PWM
-static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
-
-// Deklaracja timera
-static struct k_timer my_timer;
-
-// Funkcja wywoływana po wygaśnięciu timera
-void timer_expiry_function(struct k_timer *timer_id)
-{
-    gpio_pin_toggle_dt(&led);
-    printk("Timer wyzwolony! Zmieniam stan LED\n");
-}
-
-// Funkcja inicjująca timer
-void init_timer(void)
-{
-    k_timer_init(&my_timer, timer_expiry_function, NULL);
-    k_timer_start(&my_timer, K_MSEC(1000), K_MSEC(1000)); // Wyzwalaj co 1000 ms
-}
 
 // Konfiguracja LED
-void configure_led(void)
-{
-    if (!device_is_ready(led.port)) {
-        printk("Błąd: GPIO dla LED nie jest gotowe!\n");
-        return;
-    }
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
-    int ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);
-    if (ret < 0) {
-        printk("Błąd: nie udało się skonfigurować LED!\n");
-    }
+// Funkcja callback wywoływana po osiągnięciu wartości top przez PIT
+static void pit_top_callback(const struct device *dev, void *user_data)
+{
+    printk("PIT top value reached!\n");
+    gpio_pin_toggle_dt(&led);
 }
 
-// Główna funkcja aplikacji
 int main(void)
 {
-    printk("Start aplikacji z wykorzystaniem timera i PWM\n");
+    // Uchwyty do urządzeń
+    const struct device *pit_ch0 = DEVICE_DT_GET(DT_NODELABEL(pit0_channel0));
+    if (!device_is_ready(pit_ch0)) {
+        printk("PIT channel0 not ready\n");
+        return -1;
+    }
 
-    // Konfiguracja LED
-    configure_led();
+    if (!device_is_ready(led.port)) {
+        printk("LED device not ready\n");
+        return -1;
+    }
 
-    // Inicjalizacja timera
-    init_timer();
+    if (gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE) < 0) {
+        printk("Failed to configure LED pin\n");
+        return -1;
+    }
+
+    // Odczytanie częstotliwości wejściowej PIT
+    uint32_t freq = counter_get_frequency(pit_ch0);
+    printk("PIT frequency: %u Hz\n", freq);
+
+    // Konfiguracja top i callbacka
+    struct counter_top_cfg cfg = {
+        .ticks = freq,        // maksymalna wartość (1s)
+        .callback = pit_top_callback,
+        .user_data = NULL,
+        .flags = 0
+    };
+
+    // Ustaw top
+    if (counter_set_top_value(pit_ch0, &cfg) < 0) {
+        printk("Failed to set top value\n");
+        return -1;
+    }
+
+    // Uruchom timer PIT
+    if (counter_start(pit_ch0) < 0) {
+        printk("Failed to start PIT\n");
+        return -1;
+    }
 
     while (1) {
-        k_sleep(K_FOREVER); // Proces główny pozostaje w uśpieniu
+        k_sleep(K_FOREVER);
     }
+
     return 0;
 }
