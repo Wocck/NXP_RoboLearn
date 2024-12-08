@@ -10,6 +10,8 @@
 #define PWM_A_ALIAS DT_ALIAS(pwm_d3)     // ENA
 #define PWM_B_ALIAS DT_ALIAS(pwm_led0)   // ENB
 
+#define PERIOD_NS 50000
+
 Engine::Engine()
     : pwm_a_spec(PWM_DT_SPEC_GET(PWM_A_ALIAS)),
       pwm_b_spec(PWM_DT_SPEC_GET(PWM_B_ALIAS)),
@@ -60,11 +62,6 @@ bool Engine::init() {
         printk("Error configuring GPIO_IN4 (D7): %d\n", ret);
         return false;
     }
-
-    setMotorDirectionA(true);
-    setMotorDirectionB(true);
-
-    /* Ustawienie początkowego wypełnienia PWM na 0% (wyłączone silniki) */
     setMotorSpeedA(0);
     setMotorSpeedB(0);
 
@@ -73,16 +70,24 @@ bool Engine::init() {
 }
 
 void Engine::setMotorSpeedA(uint32_t pulse_ns) {
-    int ret = pwm_set_dt(&pwm_a_spec, pulse_ns, 0);
+    if (pulse_ns > PERIOD_NS) {
+        pulse_ns = PERIOD_NS; // Ogranicz wartość do maksymalnego okresu
+    }
+
+    int ret = pwm_set_dt(&pwm_a_spec, PERIOD_NS, pulse_ns);
     if (ret < 0) {
-        printk("Failed to set PWM on A (ENA): %d\n", ret);
+        printk("Failed to set PWM A: %d\n", ret);
     }
 }
 
 void Engine::setMotorSpeedB(uint32_t pulse_ns) {
-    int ret = pwm_set_dt(&pwm_b_spec, pulse_ns, 0);
+    if (pulse_ns > PERIOD_NS) {
+        pulse_ns = PERIOD_NS; // Ogranicz wartość do maksymalnego okresu
+    }
+
+    int ret = pwm_set_dt(&pwm_b_spec, PERIOD_NS, pulse_ns);
     if (ret < 0) {
-        printk("Failed to set PWM on B (ENB): %d\n", ret);
+        printk("Failed to set PWM B: %d\n", ret);
     }
 }
 
@@ -106,70 +111,81 @@ void Engine::setMotorDirectionB(bool forward) {
     }
 }
 
-uint32_t Engine::mapJoystickToPulse(int8_t value, uint32_t period_ns) {
-    // Klamrowanie wartości joysticka do zakresu -90 do 90
-    if (value > 90) value = 90;
-    if (value < -90) value = -90;
-
-    if (value == 0) {
+uint32_t Engine::mapSpeedToPulse(uint8_t speed) {
+    // Zakres wejściowy: 0 - 90
+    if(speed == 0) {
         return 0;
-    } else {
-        // Obliczanie wypełnienia PWM proporcjonalnie do wartości joysticka
-        // Dodajemy minimalne wypełnienie dla większej rozdzielczości
-        const uint32_t min_pulse_ns = period_ns / 180; // ~0.56% duty cycle
-
-        return min_pulse_ns + (abs(value) * (period_ns - min_pulse_ns)) / 90;
     }
+    const uint32_t min_pulse_ns = 35000; // Minimalne pulse_ns dla uruchomienia silnika
+    const uint32_t max_pulse_ns = PERIOD_NS; // Maksymalne pulse_ns
+    const uint8_t max_speed = 90;        // Maksymalna wartość wejściowa
+
+    // Zabezpieczenie przed przekroczeniem zakresu
+    if (speed > max_speed) {
+        speed = max_speed;
+    }
+
+    // Mapowanie liniowe: pulse_ns = min_pulse_ns + (speed / max_speed) * (max_pulse_ns - min_pulse_ns)
+    uint32_t pulse_ns = min_pulse_ns + ((max_pulse_ns - min_pulse_ns) * speed) / max_speed;
+
+    return pulse_ns;
 }
 
-void Engine::controlFromJoystick(const DataPacket& data) {
-    int joystickX = data.joystickX; // -90 do 90
-    int joystickY = data.joystickY; // -90 do 90
+void Engine::controlMotors(const DataPacket &joystickData) {
+    // Wartości z joysticka
+    int8_t x = joystickData.joystickX;
+    int8_t y = joystickData.joystickY;
 
-    // Obliczanie wartości dla każdego silnika
-    int left = joystickY + joystickX;   // Silnik B (lewy)
-    int right = joystickY - joystickX;  // Silnik A (prawy)
+    // Obliczanie wypełnienia PWM dla każdego silnika
+    uint32_t pulseA = 0, pulseB = 0; // Wartości PWM
+    bool directionA = true, directionB = true; // Kierunki (true = do przodu)
 
-    // Klamrowanie wartości do zakresu -90 do 90
-    if (left > 90) left = 90;
-    if (left < -90) left = -90;
-    if (right > 90) right = 90;
-    if (right < -90) right = -90;
+    // 1) Obracanie w miejscu
+    if (y == 0 && x != 0) {
+        // Dla obracania w miejscu jeden silnik do przodu, drugi do tyłu
+        pulseA = mapSpeedToPulse(abs(x));
+        pulseB = mapSpeedToPulse(abs(x));
 
-    // Obliczanie wypełnienia PWM
-    uint32_t left_pulse = mapJoystickToPulse(left, pwm_b_spec.period);
-    uint32_t right_pulse = mapJoystickToPulse(right, pwm_a_spec.period);
+        directionA = (x < 0); // Jeśli X < 0, prawy silnik do przodu
+        directionB = (x > 0); // Jeśli X > 0, lewy silnik do przodu
+    }
+    // 2) Jazda w linii prostej
+    else if (x == 0 && y != 0) {
+        // Oba silniki z tą samą prędkością i kierunkiem
+        pulseA = mapSpeedToPulse(abs(y));
+        pulseB = mapSpeedToPulse(abs(y));
 
-    // Ustawianie kierunku i prędkości silnika B (lewy)
-    if (left > 0) {
-        setMotorDirectionB(true); // Forward
-        setMotorSpeedB(left_pulse);
-    } else if (left < 0) {
-        setMotorDirectionB(false); // Backward
-        setMotorSpeedB(left_pulse);
-    } else {
-        // Stop silnika B
-        setMotorSpeedB(0);
+        directionA = (y > 0); // Jeśli Y > 0, jedziemy do przodu
+        directionB = (y > 0);
+    }
+    // 3) Skręcanie podczas ruchu
+    else if (x != 0 && y != 0) {
+        // Dla skrętu różnicujemy prędkości obu silników
+        int8_t speedA = y + x; // Dodajemy wpływ X na prawy silnik
+        int8_t speedB = y - x; // Odejmujemy wpływ X na lewy silnik
+
+        // Normalizacja prędkości do zakresu -90 do 90
+        speedA = (speedA > 90) ? 90 : (speedA < -90 ? -90 : speedA);
+        speedB = (speedB > 90) ? 90 : (speedB < -90 ? -90 : speedB);
+
+        pulseA = mapSpeedToPulse(abs(speedA));
+        pulseB = mapSpeedToPulse(abs(speedB));
+
+        directionA = (speedA > 0); // Jeśli > 0, jedziemy do przodu
+        directionB = (speedB > 0);
+    }
+    // 4) Stop (X == 0 i Y == 0)
+    else {
+        pulseA = 0;
+        pulseB = 0;
+        directionA = true; // Domyślnie kierunek do przodu
+        directionB = true;
     }
 
-    // Ustawianie kierunku i prędkości silnika A (prawy)
-    if (right > 0) {
-        setMotorDirectionA(true); // Forward
-        setMotorSpeedA(right_pulse);
-    } else if (right < 0) {
-        setMotorDirectionA(false); // Backward
-        setMotorSpeedA(right_pulse);
-    } else {
-        // Stop silnika A
-        setMotorSpeedA(0);
-    }
+    // Ustawienie prędkości i kierunków
+    setMotorDirectionA(directionA);
+    setMotorDirectionB(directionB);
 
-    // Debugowanie: Logowanie prędkości i kierunków silników
-    printk("Left Motor: %s at %u ns PWM\n",
-           (left > 0) ? "Forward" : (left < 0) ? "Backward" : "Stopped",
-           left != 0 ? left_pulse : 0);
-
-    printk("Right Motor: %s at %u ns PWM\n",
-           (right > 0) ? "Forward" : (right < 0) ? "Backward" : "Stopped",
-           right != 0 ? right_pulse : 0);
+    setMotorSpeedA(pulseA);
+    setMotorSpeedB(pulseB);
 }

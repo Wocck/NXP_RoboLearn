@@ -13,14 +13,14 @@ DataPacket getJoystickData() {
     switch (counter % 8) {
         case 0:
             data.joystickX = 0;
-            data.joystickY = 90; // Przód
+            data.joystickY = 50; // Przód
             break;
         case 1:
             data.joystickX = 20;
             data.joystickY = 60; // Skręt w prawo z ruchem do przodu
             break;
         case 2:
-            data.joystickX = 90;
+            data.joystickX = 50;
             data.joystickY = 0;  // Skręt w prawo w miejscu
             break;
         case 3:
@@ -29,14 +29,14 @@ DataPacket getJoystickData() {
             break;
         case 4:
             data.joystickX = 0;
-            data.joystickY = -90; // Tył
+            data.joystickY = -30; // Tył
             break;
         case 5:
             data.joystickX = -20;
             data.joystickY = -60; // Skręt w lewo z ruchem do tyłu
             break;
         case 6:
-            data.joystickX = -90;
+            data.joystickX = -30;
             data.joystickY = 0;  // Skręt w lewo w miejscu
             break;
         case 7:
@@ -48,6 +48,26 @@ DataPacket getJoystickData() {
     data.buttonPressed = 0; // Brak naciskania przycisku
     counter++;
     return data;
+}
+
+uint32_t mapSpeedToPulse(uint8_t speed) {
+    // Zakres wejściowy: 0 - 90
+    if(speed == 0) {
+        return 0;
+    }
+    const uint32_t min_pulse_ns = 35000; // Minimalne pulse_ns dla uruchomienia silnika
+    const uint32_t max_pulse_ns = 50000; // Maksymalne pulse_ns
+    const uint8_t max_speed = 90;        // Maksymalna wartość wejściowa
+
+    // Zabezpieczenie przed przekroczeniem zakresu
+    if (speed > max_speed) {
+        speed = max_speed;
+    }
+
+    // Mapowanie liniowe: pulse_ns = min_pulse_ns + (speed / max_speed) * (max_pulse_ns - min_pulse_ns)
+    uint32_t pulse_ns = min_pulse_ns + ((max_pulse_ns - min_pulse_ns) * speed) / max_speed;
+
+    return pulse_ns;
 }
 
 int main(void)
@@ -62,20 +82,15 @@ int main(void)
     }
 
     printk("Starting PWM and Motor Control...\n");
-
     while (1) {
-        /* Odbieranie danych z joysticka */
-        DataPacket data = getJoystickData();
+        // Pobierz dane joysticka
+        DataPacket joystickData = getJoystickData();
 
-        /* Sterowanie silnikami na podstawie danych z joysticka */
-        engine.controlFromJoystick(data);
+        // Steruj silnikami
+        engine.controlMotors(joystickData);
+        printk("Joystick X: %d, Y: %d\n", joystickData.joystickX, joystickData.joystickY);
 
-        /* Logowanie aktualnych wartości joysticka */
-        printk("JoystickX: %d, JoystickY: %d, ButtonPressed: %d\n", 
-               data.joystickX, data.joystickY, data.buttonPressed);
-
-        /* Krótka pauza */
-        k_sleep(K_MSEC(1000));
+        k_sleep(K_MSEC(3000)); // Krótka pauza
     }
 
     return 0;

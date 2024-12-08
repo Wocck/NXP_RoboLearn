@@ -12,7 +12,7 @@ project(serial)
 #target_sources(app PRIVATE Projects/LED_hardware_timer/main.cpp)
 
 ##### LED pwm #####
-#target_sources(app PRIVATE Projects/LED_pwm/main.cpp)
+# target_sources(app PRIVATE Projects/LED_pwm/main.cpp)
 
 ##### DC motor #####
 target_sources(app PRIVATE Projects/DC_motor/src/main.cpp Projects/DC_motor/src/engine.cpp)

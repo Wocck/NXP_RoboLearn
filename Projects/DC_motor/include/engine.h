@@ -23,14 +23,14 @@ public:
     void setMotorSpeedB(uint32_t pulse_ns);
     void setMotorDirectionA(bool forward);
     void setMotorDirectionB(bool forward);
-    void controlFromJoystick(const DataPacket& data);
+    void controlMotors(const DataPacket &joystickData);
 
 private:
     const struct pwm_dt_spec pwm_a_spec; /**< Specyfikacja PWM dla silnika A (ENA). */
     const struct pwm_dt_spec pwm_b_spec; /**< Specyfikacja PWM dla silnika B (ENB). */
 
     const struct device *gpio_dev; /**< Wskaźnik do kontrolera GPIO. */
-    uint32_t mapJoystickToPulse(int8_t value, uint32_t period_ns);
+    uint32_t mapSpeedToPulse(uint8_t speed);
 };
 
 #endif // ENGINE_H

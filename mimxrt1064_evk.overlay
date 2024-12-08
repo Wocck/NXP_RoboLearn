@@ -8,6 +8,14 @@
     status = "okay";
 };
 
+&csi {
+    status = "disabled";
+};
+
+&flexcan1 {
+    status = "disabled";
+};
+
 &pinctrl {
     /* Konfiguracja pinmux dla GPIO_AD_B1_08 */
     pinmux_flexpwm4: pinmux_flexpwm4 {
@@ -39,7 +47,7 @@
 / { 
     pwmleds {
         d3_pwm: d3_pwm {
-            pwms = <&flexpwm4_pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+            pwms = <&flexpwm4_pwm0 0 0 PWM_POLARITY_NORMAL>;
         };
     };
 };

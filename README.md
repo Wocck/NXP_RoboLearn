@@ -323,3 +323,23 @@ Prędkość silnika jest kontrolowana poprzez PWM na pinach ENA (dla silnika A) 
 Wypełnienie PWM (Duty Cycle): Określa, jak długo sygnał PWM jest w stanie HIGH w cyklu PWM:
 - Wyższe wypełnienie (bliżej 100%): Większa moc i prędkość silnika.
 - Niższe wypełnienie (bliżej 0%): Mniejsza moc i prędkość silnika.
+
+Częstotliwość PWM to liczba cykli sygnału PWM na sekundę. Jest odwrotnością okresu (period_ns). W dokumentacji sterownika znajdziesz zakres częstotliwości, z jakimi może pracować. Większość sterowników obsługuje częstotliwości od 1 kHz do 20 kHz. Częstotliwości poniżej 20 kHz mogą generować piski słyszalne dla ludzkiego ucha więc najlepiej zastosowac wyższą częstotliwość. 
+
+Wypełnienie PWM (ang. duty cycle) określa procentowy czas, przez jaki sygnał jest w stanie HIGH w ramach jednego cyklu. Jest to kluczowy parametr wpływający na prędkość i moment obrotowy silnika. Silnik musi pokonać pewne fizyczne ograniczenia więc należy znaleźć minimalne wypełnienie, które pozwoli na uruchomienie silnika. 
+
+---
+
+## **Ćwiczenie 1: Znajdź minimalne wypełnienie**
+
+1. **Podłącz silnik do modułu L298N** zgodnie z opisem w sekcji "Przykładowe połączenie pinów płytki `MIMXRT1064_evk` z modułem `L298N`".
+2. **Skonfiguruj PWM** na pinach D3 i D4 zgodnie z instrukcjami w sekcji "Konfiguracja PWM na pinach arduino".
+3. **Uruchom program** sterujący PWM na pinie D4 (ENA) i D3 (ENB) z minimalnym wypełnieniem (np. 10%).
+4. **Zwiększaj wypełnienie** PWM co 10% i obserwuj, przy jakim wypełnieniu silnik zaczyna się obracać.
+5. **Zanotuj minimalne wypełnienie** PWM, przy którym silnik zaczyna się obracać.
+
+## **Ćwiczenie 2: Sterowanie za pomocą Joysticka**
+
+Stwórz metody do sterowania prędkością silnika A i B za pomocą joysticka. Joystick wysyła dane z zakresu <-90, 90>, które musisz przekształcić na wypełnienie PWM. Przykładowo, jeśli joystick wysyła 0 stopni, to silnik powinien być zatrzymany. Jeśli joystick wysyła 90 stopni, to silnik powinien obracać się z maksymalną prędkością w jedną stronę, a dla -90 stopni w drugą stronę.
+
+---
