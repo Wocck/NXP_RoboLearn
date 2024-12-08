@@ -194,9 +194,132 @@ Przykładowe połączenie pinów płytki `MIMXRT1064_evk` z modułem `L298N`:
 
 | Pin na płytce MIMXRT1064-EVK  | Pin na module L298N | Opis                    |
 |-------------------------------|---------------------|-------------------------|
-| D7  (GPIO_AD_B1_03)           | ENA                 | PWM dla silnika A       |
-| D6  (GPIO_AD_B1_02)           | ENB                 | PWM dla silnika B       |
-| D5                            | IN1                 | Sterowanie kierunkiem   |
-| D4                            | IN2                 | Sterowanie kierunkiem   |
-| D3                            | IN3                 | Sterowanie kierunkiem   |
-| D2                            | IN4                 | Sterowanie kierunkiem   |
+| D4  (GPIO_AD_B0_09)           | ENB                 | PWM dla silnika B       |
+| D3  (GPIO_AD_B1_08)           | ENA                 | PWM dla silnika A       |
+| D2                            | IN1                 | Sterowanie kierunkiem   |
+| D5                            | IN2                 | Sterowanie kierunkiem   |
+| D6                            | IN3                 | Sterowanie kierunkiem   |
+| D7                            | IN4                 | Sterowanie kierunkiem   |
+
+
+## **Konfiguracja PWM na pinach arduino**
+
+Aby było łatwiej użyjemy już skonfigurowanego pinu PWM, ktrórego używaliśmy do generowania sygnału pwm na wbudowaną diodę led ponieważ jest on jednocześnie podłączony do pinu D4. Możemy to wyczytać z *reference manual* płytki MIMXRT1064-EVK oraz plików `dts` i `pinctrl.dtsi`
+
+- Pin `GPIO_AD_B0_09` jest przypisany do `GPIO1` (`GPIO1_IO09`) co możemy wyczytać w tabeli *Table 10-1. Muxing Options*.
+- W tej samej tabeli możemy wyczytać, że pin jest również przypisany do `FLEXPWM2_PWM3_A`
+
+Możemy sprawdzić czy istnieje konfiguracja w strukturze `dts` dotycząca tego PWM. W pliku `mimxrt1064_evk.dts` znajdujemy:
+
+```dts
+aliases {
+		pwm-led0 = &green_pwm_led;
+        ...
+	};
+
+pwmleds {
+    compatible = "pwm-leds";
+
+    green_pwm_led: green_pwm_led {
+        pwms = <&flexpwm2_pwm3 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+    };
+};
+
+&flexpwm2_pwm3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm2>;
+	pinctrl-names = "default";
+};
+```
+
+Powyższa struktura opisuje konfigurację PWM dla diody LED. Możemy zauważyć, że PWM jest skonfigurowane na `flexpwm2_pwm3` i przypisane do `GPIO1_IO09` czyli pinu arduino `<10 0 &gpio1 9 0>,	/* D4 */`. Możemy więc użyć tego PWM do sterowania silnikiem. PWM który podamy na ten pin będzie sterował zarówno diodą jak i pinem `D4`.
+
+Następnie potrzbujemy drugiego PWM, który będzie sterował drugim silnikiem. Aby znaleźć taki pin skorzystamy z tabeli *Table 10-1. Muxing Options* w *reference manual* płytki MIMXRT1064-EVK. Znajdujemy, że pin `GPIO_AD_B1_08` jest przypisany do `FLEXPWM4_PWM0_A`. Jest to pin `GPIO1_IO24` czyli `<9 0 &gpio1 24 0>,	/* D3 */`. Jeżeli spojrzymy w struktury `dts` nie znajdziemy jednak przypisanego tego pinu do kontrolera PWM. Musimy to skonfigurować ręcznie w pliku overlay.
+
+1. Odniesienie do węzła kontrolera pinów w Device Tree.
+
+```dts
+&pinctrl {
+    /* Konfiguracja pinmux dla GPIO_AD_B1_08 */
+    pinmux_flexpwm4: pinmux_flexpwm4 {
+        group0 {
+            pinmux = <&iomuxc_gpio_ad_b1_08_flexpwm4_pwma0_overlay>;
+            drive-strength = "r0-4";
+            bias-pull-up;
+            bias-pull-up-value = "47k";
+            slew-rate = "slow";
+            nxp,speed = "100-mhz";
+        };
+    };
+};
+```
+
+2. Konfiguracja samego pinu na funkcję `ALT1`
+Konkretne wartości rejestrów możemy znaleźć w pliku `fsl_iomuxc.h` przez wyszukanie w nim pinu `GPIO_AD_B1_08`.
+Znajdziemy w nim wartości rejestrów dla różnych funckji pinu. Nas interesuje funkcja `ALT1` czyli `FLEXPWM4_PWMA00`.
+
+`ALT1 — Select mux mode: ALT1 mux port: FLEXPWM4_PWMA00 of instance: flexpwm4`:
+```C++
+#define IOMUXC_GPIO_AD_B1_08_FLEXSPIA_SS1_B 0x401F811CU, 0x0U, 0, 0, 0x401F830CU
+#define IOMUXC_GPIO_AD_B1_08_FLEXPWM4_PWMA00 0x401F811CU, 0x1U, 0x401F8494U, 0x1U, 0x401F830CU
+#define IOMUXC_GPIO_AD_B1_08_FLEXCAN1_TX 0x401F811CU, 0x2U, 0, 0, 0x401F830CU
+```
+
+Przepisujemy wartości rejestrów do pliku `.overlay`:
+```dts
+&iomuxc {
+    iomuxc_gpio_ad_b1_08_flexpwm4_pwma0_overlay: IOMUXC_GPIO_AD_B1_08_FLEXPWM4_PWMA00 {
+        pinmux = <0x401F811C 0x1 0x401F8494 0x1 0x401F830C>;
+    };
+};
+```
+
+3. Aktywacja węzła `flexpwm4_pwm0` i przypisanie aliasu 
+
+```dts
+&flexpwm4_pwm0 {
+    status = "okay";
+    pinctrl-0 = <&pinmux_flexpwm4>;
+    pinctrl-names = "default";
+};
+```
+
+Ta sekcja definiuje urządzenie (d3_pwm) sterowane przez PWM4. Określa, który kontroler PWM, kanał oraz parametry sygnału PWM mają być używane do sterowania:
+
+```dts
+/ { 
+    pwmleds {
+        d3_pwm: d3_pwm {
+            pwms = <&flexpwm4_pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+        };
+    };
+};
+```
+
+Tu definiujemy alias, który umożliwia aplikacji łatwe odniesienie się do konfiguracji PWM4 dla D3.
+
+```dts
+/ {
+    aliases {
+        pwm-d3 = &d3_pwm; /* PWM na D3 (GPIO_AD_B1_08) */
+    };
+};
+```
+
+---
+
+Dzięki tej konfiguracji w `overlay` możemy używać pwm dla pinu D3 tak samo jak robiliśmy to z wbudowaną diodą led. Możemy teraz użyć tego PWM do sterowania drugim silnikiem.
+
+```C++
+static const struct pwm_dt_spec pwm_d4_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
+static const struct pwm_dt_spec pwm_d3_spec = PWM_DT_SPEC_GET(DT_ALIAS(pwm_d3));
+```
+
+---
+
+## ** Sterowanie silnikami DAC przy pomocy PWM**
+
+Prędkość silnika jest kontrolowana poprzez PWM na pinach ENA (dla silnika A) i ENB (dla silnika B). PWM pozwala na płynną regulację mocy dostarczanej do silnika poprzez zmienianie wypełnienia impulsów.
+Wypełnienie PWM (Duty Cycle): Określa, jak długo sygnał PWM jest w stanie HIGH w cyklu PWM:
+- Wyższe wypełnienie (bliżej 100%): Większa moc i prędkość silnika.
+- Niższe wypełnienie (bliżej 0%): Mniejsza moc i prędkość silnika.

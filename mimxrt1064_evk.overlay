@@ -8,27 +8,8 @@
     status = "okay";
 };
 
-&csi {
-    status = "disabled";
-};
-
-&pinmux_csi {
-    group1 {
-        pinmux = <>;
-    };
-};
-
-&flexcan1 {
-    status = "disabled";
-};
-
-&pinmux_flexcan1 {
-    group0 {
-        pinmux = <>;
-    };
-};
-
 &pinctrl {
+    /* Konfiguracja pinmux dla GPIO_AD_B1_08 */
     pinmux_flexpwm4: pinmux_flexpwm4 {
         group0 {
             pinmux = <&iomuxc_gpio_ad_b1_08_flexpwm4_pwma0_overlay>;
@@ -41,20 +22,30 @@
     };
 };
 
+/* Konfiguracja pinu GPIO_AD_B1_08 na IOMUXC_GPIO_AD_B1_08_FLEXPWM4_PWMA00*/
 &iomuxc {
     iomuxc_gpio_ad_b1_08_flexpwm4_pwma0_overlay: IOMUXC_GPIO_AD_B1_08_FLEXPWM4_PWMA00 {
         pinmux = <0x401F811C 0x1 0x401F8494 0x1 0x401F830C>;
     };
 };
 
+/* Konfiguracja FLEXPWM dla GPIO_AD_B1_08 */
 &flexpwm4_pwm0 {
     status = "okay";
     pinctrl-0 = <&pinmux_flexpwm4>;
     pinctrl-names = "default";
 };
 
+/ { 
+    pwmleds {
+        d3_pwm: d3_pwm {
+            pwms = <&flexpwm4_pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+        };
+    };
+};
+
 / {
     aliases {
-        pwm-d3 = &flexpwm4_pwm0; /* PWM na D3 (GPIO_AD_B1_08) */
+        pwm-d3 = &d3_pwm; /* PWM na D3 (GPIO_AD_B1_08) */
     };
 };
