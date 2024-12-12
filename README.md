@@ -19,14 +19,20 @@ Oprogramowanie napisane przy użyciu **Arduino IDE** oraz biblioteki `NRF` od `T
 |                           | GND                | GND                     | Masa                        |
 |                           | VRX                | GPIO4 (ADC2_0)          | Odczyt osi X                |
 |                           | VRY                | GPIO2 (ADC2_2)          | Odczyt osi Y                |
-|                           | SW                 | GPIO16                  | Stan przycisku              |
+|                           | SW                 | GPIO27                  | Stan przycisku              |
 | **nRF24L01**              | VCC                | 3.3V                    | Zasilanie modułu            |
 |                           | GND                | GND                     | Masa                        |
-|                           | CE                 | GPIO27                  | Tryb pracy                  |
-|                           | CSN (CS)           | GPIO15                  | Wybór urządzenia SPI        |
-|                           | SCK                | GPIO14                  | Zegar SPI                   |
-|                           | MOSI               | GPIO13                  | Dane do modułu (Master Out) |
-|                           | MISO               | GPIO12                  | Dane z modułu (Master In)   |
+|                           | CE                 | GPIO26                  | Tryb pracy                  |
+|                           | CSN (CS)           | GPIO5                  | Wybór urządzenia SPI        |
+|                           | SCK                | GPIO18                  | Zegar SPI                   |
+|                           | MOSI               | GPIO23                  | Dane do modułu (Master Out) |
+|                           | MISO               | GPIO19                  | Dane z modułu (Master In)   |
 
 
-# popraw pin CS na HSPI_CS 
+## Pinout płytki **ESP32 DevKit V1**
+
+![Pinout](docs/images/esp32.png)
+
+## Pinout **nRF24L01**
+
+![Pinout](docs/images/nrf24.png)
