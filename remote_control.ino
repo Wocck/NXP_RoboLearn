@@ -3,17 +3,18 @@
 
 // Definicje pinów
 #define VRX_PIN 4   // Oś X joysticka (GPIO_4 - ADC2_0)
-#define VRY_PIN 2   // Oś Y joysticka (GPIO_2 - ADC2_2)
-#define SW_PIN 16   // Przycisk joysticka (GPIO_16)
-#define CE_PIN 32   // CE modułu nRF24L01 (GPIO_22)
-#define CSN_PIN 14   // CSN modułu nRF24L01 (GPIO_5)
+#define VRY_PIN 15   // Oś Y joysticka (GPIO_2 - ADC2_2)
+#define SW_PIN 32   // Przycisk joysticka (GPIO_16)
+#define CE_PIN 33   // CE modułu nRF24L01 (GPIO_22)
+#define CSN_PIN 5   // CSN modułu nRF24L01 (GPIO_5)
+#define LED 2
 
-RF24 radio(CE_PIN, CSN_PIN);
+RF24 radio(CE_PIN, CSN_PIN, 100000);
 
-struct DataPacket {
-  int joystickX;
-  int joystickY;   
-  bool buttonPressed;
+struct __attribute__((packed)) DataPacket {
+  int8_t joystickX;
+  int8_t joystickY;
+  uint8_t buttonPressed;
 };
 
 DataPacket data;
@@ -24,7 +25,7 @@ int maxDeflectionPositiveY, maxDeflectionNegativeY;
 
 int rawX;
 int rawY;
-const byte address[6] = "00001";
+const byte address[5] = {0xCC, 0xCE, 0xCC, 0xCE, 0xCC};
 
 void calibrateJoystick() {
   Serial.println("Kalibracja joysticka. Proszę nie ruszać joysticka.");
@@ -45,53 +46,6 @@ void calibrateJoystick() {
   Serial.print("Kalibracja środka Y: ");
   Serial.println(centerY);
 }
-
-// void readJoystick() {
-//   rawX = analogRead(VRX_PIN);
-//   rawY = analogRead(VRY_PIN);
-
-//   int deltaX = rawX - centerX;
-//   int deltaY = rawY - centerY;
-
-//   float percentageX = 0;
-//   float percentageY = 0;
-
-//   // Obliczanie procentowego odchylenia dla osi X
-//   if (deltaX >= 0) {
-//     percentageX = (float)deltaX / maxDeflectionPositiveX * 100.0;
-//   } else {
-//     percentageX = (float)deltaX / maxDeflectionNegativeX * 100.0;
-//   }
-
-//   // Obliczanie procentowego odchylenia dla osi Y
-//   if (deltaY >= 0) {
-//     percentageY = (float)deltaY / maxDeflectionPositiveY * 100.0;
-//   } else {
-//     percentageY = (float)deltaY / maxDeflectionNegativeY * 100.0;
-//   }
-
-//   // Zastosowanie martwej strefy ±5%
-//   if (percentageX > -5 && percentageX < 5) {
-//     percentageX = 0;
-//   }
-//   if (percentageY > -5 && percentageY < 5) {
-//     percentageY = 0;
-//   }
-
-//   // Zaokrąglenie do najbliższej wartości dziesiętnej
-//   int valueX = ((int)(abs(percentageX) / 10)) * 10;
-//   int valueY = ((int)(abs(percentageY) / 10)) * 10;
-
-//   if (valueX > 90) valueX = 90;
-//   if (valueY > 90) valueY = 90;
-
-//   // Przywrócenie znaku odchylenia
-//   data.joystickX = valueX * ((percentageX >= 0) ? 1 : -1);
-//   data.joystickY = valueY * ((percentageY >= 0) ? 1 : -1);
-
-//   // Odczyt przycisku
-//   data.buttonPressed = !digitalRead(SW_PIN);
-// }
 
 void readJoystick() {
   rawX = analogRead(VRX_PIN);
@@ -133,11 +87,18 @@ void readJoystick() {
   if (valueY > 90) valueY = 90;
 
   // Przywrócenie znaku odchylenia
-  data.joystickX = valueX * ((percentageX >= 0) ? 1 : -1);
-  data.joystickY = valueY * ((percentageY >= 0) ? 1 : -1);
+  // Mixed X and Y so that orientation of remote is proper (up and down)
+  data.joystickX = valueY * ((percentageY >= 0) ? 1 : -1);
+  data.joystickY = valueX * ((percentageX >= 0) ? 1 : -1);
 
   // Odczyt przycisku
   data.buttonPressed = !digitalRead(SW_PIN);
+
+  if(data.buttonPressed != 0 || data.joystickX != 0 || data.joystickY != 0){
+    digitalWrite(LED, HIGH);
+  } else {
+    digitalWrite(LED, LOW);
+  }
 }
 
 void initializeRF24() {
@@ -147,17 +108,20 @@ void initializeRF24() {
   }
 
   // Konfiguracja modułu radiowego
-  radio.openWritingPipe(address);
-  radio.setPALevel(RF24_PA_LOW);
+  radio.setAutoAck(false);
+  radio.setAddressWidth(5);
+  radio.setPALevel(RF24_PA_HIGH);
   radio.setDataRate(RF24_250KBPS);
-  radio.stopListening();
-
-  Serial.println("Moduł nRF24L01 gotowy.");
+  radio.setChannel(76);
+  radio.setPayloadSize(3);
+  radio.openWritingPipe(address);
+  Serial.println("Moduł nRF24L01 gotowy:");
   radio.printDetails();
 }
 
 void sendData() {
   bool success = radio.write(&data, sizeof(data));
+  Serial.println(sizeof(data));
   if (success) {
     Serial.println("Dane wysłane.");
   } else {
@@ -168,6 +132,7 @@ void sendData() {
 void setup() {
   Serial.begin(115200);
   pinMode(SW_PIN, INPUT_PULLUP);  // Konfiguracja przycisku joysticka
+  pinMode(LED, OUTPUT);
 
   // Kalibracja joysticka
   calibrateJoystick();
