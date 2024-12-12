@@ -1,6 +1,6 @@
 # 🚀 Projekt NXP_RoboLearn
 
-![GitHub repo size](https://img.shields.io/github/repo-size/Wocck/NXP_RoboLearn) ![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue)
+![GitHub repo size](https://img.shields.io/github/repo-size/Wocck/NXP_RoboLearn) ![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen) ![License](https://img.shields.io/badge/license-GPL%20v3-blue)
 
 ![C++](https://img.shields.io/badge/C%2B%2B-17%2B-blue?logo=c%2B%2B&logoColor=white)
 ![Zephyr RTOS](https://img.shields.io/badge/Zephyr-RTOS-blue?logo=zephyrproject&logoColor=white)
