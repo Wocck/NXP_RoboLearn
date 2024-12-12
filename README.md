@@ -17,13 +17,13 @@ Oprogramowanie napisane przy użyciu **Arduino IDE** oraz biblioteki `NRF` od `T
 |---------------------------|--------------------|-------------------------|-----------------------------|
 | **Joystick**              | VCC                | 3.3V                    | Zasilanie joysticka         |
 |                           | GND                | GND                     | Masa                        |
-|                           | VRX                | GPIO4 (ADC2_0)          | Odczyt osi X                |
-|                           | VRY                | GPIO2 (ADC2_2)          | Odczyt osi Y                |
-|                           | SW                 | GPIO27                  | Stan przycisku              |
+|                           | VRX                | GPIO4                   | Odczyt osi X                |
+|                           | VRY                | GPIO15                  | Odczyt osi Y                |
+|                           | SW                 | GPIO32                  | Stan przycisku              |
 | **nRF24L01**              | VCC                | 3.3V                    | Zasilanie modułu            |
 |                           | GND                | GND                     | Masa                        |
-|                           | CE                 | GPIO26                  | Tryb pracy                  |
-|                           | CSN (CS)           | GPIO5                  | Wybór urządzenia SPI        |
+|                           | CE                 | GPIO33                  | Tryb pracy                  |
+|                           | CSN (CS)           | GPIO5                   | Wybór urządzenia SPI        |
 |                           | SCK                | GPIO18                  | Zegar SPI                   |
 |                           | MOSI               | GPIO23                  | Dane do modułu (Master Out) |
 |                           | MISO               | GPIO19                  | Dane z modułu (Master In)   |
