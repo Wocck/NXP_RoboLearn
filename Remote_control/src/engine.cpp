@@ -12,11 +12,10 @@
 
 #define PERIOD_NS 50000
 
-Engine::Engine()
+Engine::Engine(const struct device* gpio)
     : pwm_a_spec(PWM_DT_SPEC_GET(PWM_A_ALIAS)),
       pwm_b_spec(PWM_DT_SPEC_GET(PWM_B_ALIAS)),
-      gpio_dev(DEVICE_DT_GET(DT_NODELABEL(gpio1)))
-{}
+      gpio_dev(gpio) {}
 
 bool Engine::init() {
     /* Sprawdzenie, czy urządzenia PWM są gotowe */

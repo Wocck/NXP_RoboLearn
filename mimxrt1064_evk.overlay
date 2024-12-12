@@ -1,19 +1,14 @@
-&qtmr1_timer0 {
-    status = "okay";
-    mode = "kQTMR_PriSrcRiseEdge";
-    primary_source = "kQTMR_ClockDivide_128";
-};
-
-&pit0_channel0 {
+&gpio3 {
     status = "okay";
 };
 
-&csi {
-    status = "disabled";
+&gpio1 {
+    status = "okay";
 };
 
-&flexcan1 {
-    status = "disabled";
+&lpspi1 {
+    status = "okay";
+    cs-gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
 };
 
 &pinctrl {

@@ -6,17 +6,12 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-
-struct DataPacket {
-    int8_t joystickX;      ///< Wartość osi X joysticka (-90 do 90, 0 oznacza stop)
-    int8_t joystickY;      ///< Wartość osi Y joysticka (-90 do 90, 0 oznacza stop)
-    uint8_t buttonPressed; ///< Status przycisku (0 - nie naciśnięty, 1 - naciśnięty)
-};
+#include "datapacket.h"
 
 
 class Engine {
 public:
-    Engine();
+    Engine(const struct device* gpio);
 
     bool init();
     void setMotorSpeedA(uint32_t pulse_ns);
