@@ -29,7 +29,7 @@ const byte address[5] = {0xCC, 0xCE, 0xCC, 0xCE, 0xCC};
 
 void calibrateJoystick() {
   Serial.println("Kalibracja joysticka. Proszę nie ruszać joysticka.");
-  delay(2000); // Czekaj, aby ustabilizować odczyty
+  delay(2000);
 
   // Odczyt wartości środkowych
   centerX = analogRead(VRX_PIN);
@@ -86,12 +86,11 @@ void readJoystick() {
   if (valueX > 90) valueX = 90;
   if (valueY > 90) valueY = 90;
 
-  // Przywrócenie znaku odchylenia
+
   // Mixed X and Y so that orientation of remote is proper (up and down)
   data.joystickX = valueY * ((percentageY >= 0) ? 1 : -1);
   data.joystickY = valueX * ((percentageX >= 0) ? 1 : -1);
 
-  // Odczyt przycisku
   data.buttonPressed = !digitalRead(SW_PIN);
 
   if(data.buttonPressed != 0 || data.joystickX != 0 || data.joystickY != 0){
@@ -131,33 +130,27 @@ void sendData() {
 
 void setup() {
   Serial.begin(115200);
-  pinMode(SW_PIN, INPUT_PULLUP);  // Konfiguracja przycisku joysticka
+  pinMode(SW_PIN, INPUT_PULLUP);
   pinMode(LED, OUTPUT);
 
-  // Kalibracja joysticka
   calibrateJoystick();
-
-  // Inicjalizacja modułu nRF24L01
   initializeRF24();
 }
 
 void loop() {
-  // Odczyt joysticka
   readJoystick();
+  sendData();
+  delay(50);
+  
 
   // Debugowanie wartości joysticka
-  Serial.print("\r");
-  Serial.print("X: ");
-  //Serial.print(rawX);
-  Serial.print(data.joystickX);
-  Serial.print(" | Y: ");
-  //Serial.print(rawY);
-  Serial.print(data.joystickY);
-  Serial.print(" | Przyciski: ");
-  Serial.println(data.buttonPressed);
-
-  // Wysyłanie danych
-  sendData();
-
-  delay(100);  // Mniejsze opóźnienie dla płynniejszego odczytu
+  // Serial.print("\r");
+  // Serial.print("X: ");
+  // //Serial.print(rawX);
+  // Serial.print(data.joystickX);
+  // Serial.print(" | Y: ");
+  // //Serial.print(rawY);
+  // Serial.print(data.joystickY);
+  // Serial.print(" | Przyciski: ");
+  // Serial.println(data.buttonPressed);
 }
