@@ -45,6 +45,7 @@ private:
     uint8_t rx_buf[33]; ///< Receive buffer for SPI communication
 
     DataPacket current_packet; ///< Przechowuje aktualny stan joysticka i przycisku
+    bool received_data=false; ///< Flaga informująca o odebraniu danych
 
     /**
      * @brief Callback function to handle IRQ events.
@@ -90,6 +91,8 @@ private:
      */
     int read_register(uint8_t reg, uint8_t* data, size_t len);
 
+    int send_command(uint8_t command, uint8_t* response, size_t response_len);
+
 public:
      /**
      * @brief Constructor for the NRF24 class.
@@ -127,11 +130,19 @@ public:
      */
     void test_registers();
 
+    void log_register(uint8_t reg);
+
     /**
-     * @brief Get the current DataPacket object.
+     * @brief Get the current DataPacket object. If joystick values are out of range, reset the packet.
      * @return Kopia aktualnych danych z joysticka i przycisku.
      */
-    DataPacket get_current_packet() const;
+    DataPacket get_current_packet();
+
+    /**
+     * @brief Check if the object is currently receiving data.
+     * @return True if data is being received, false otherwise.
+     */
+    bool is_receiving() { return received_data; }
 };
 
 #endif // NRF24_H

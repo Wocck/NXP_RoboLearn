@@ -22,7 +22,7 @@ int main(void) {
     NRF24 radio(gpio_dev, spi_dev);
     Engine engine(gpio_dev);
 
-    // Reset and initialize nRF24L01+ module
+    //Reset and initialize nRF24L01+ module
     radio.reset(0);
     if (radio.init() != 0) {
         printk("Failed to initialize nRF24L01+\n");
@@ -41,20 +41,26 @@ int main(void) {
         return -1;
     }
 
+    radio.test_registers();
+
+    while(!radio.is_receiving()){
+        k_sleep(K_MSEC(100));
+    }
+
     // Main loop
     while (1) {
         // Get the latest DataPacket from the nRF24 module
         DataPacket packet = radio.get_current_packet();
 
         // Log received data
-        printk("Received: joystickX=%d, joystickY=%d, buttonPressed=%d\n",
-               packet.joystickX, packet.joystickY, packet.buttonPressed);
+        // printk("Received: joystickX=%d, joystickY=%d, buttonPressed=%d\n",
+        //        packet.joystickX, packet.joystickY, packet.buttonPressed);
 
         // Control motors based on received packet
         engine.controlMotors(packet);
 
         // Small delay
-        k_sleep(K_MSEC(100));
+        k_sleep(K_MSEC(50));
     }
 
     return 0;
