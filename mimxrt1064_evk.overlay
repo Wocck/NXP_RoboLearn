@@ -1,14 +1,3 @@
-&lpi2c1 {
-    status = "okay";
-    pinctrl-0 = <&pinmux_lpi2c1>;
-    pinctrl-names = "default";
-
-    aht20: aht20@70 {
-        compatible = "aosong,aht20";
-        reg = <0x70>;
-    };
-};
-
 &gpio3 {
     status = "okay";
 };

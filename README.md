@@ -275,5 +275,3 @@ Zdefiniuj w kodzie obsługę przerwania za pomocą workqueue. Zamiast odczytywa�
 ## **Ćwiczenie 4** - Update biblioteki `NRF24`
 
 Teraz należy działający kod przerwań przenieść do biblioteki `NRF24`...
-
-**Uwaga** moduł czasem nie odbiera poprawnie przerwań ponieważ nadajnik stale nadaje dane. Po flashowaniu należy wyłączyć i włączyć zasilanie aby moduł jeszcze raz się uruchomił.
