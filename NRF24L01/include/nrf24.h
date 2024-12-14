@@ -20,7 +20,7 @@
 /**
  * @brief GPIO pin definitions for the nRF24L01+ module.
  */
-#define CE_GPIO_PIN 2 ///< Pin for Chip Enable (CE), used to control RX/TX modes. GPIO_AD_B0_03 (D9)
+#define CE_GPIO_PIN 2 ///< Pin for Chip Enable (CE), used to control RX/TX modes. GPIO_AD_B0_02 (D9)
 #define CSN_GPIO_PIN 13 ///< Pin for Chip Select Not (CSN), used to control SPI communication. GPIO_SD_B0_01 (D10)
 
 /**
