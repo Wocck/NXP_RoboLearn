@@ -1,190 +1,110 @@
 #include "engine.h"
 
-/* Definicje pinów GPIO1 */
+/* GPIO and PWM Definitions */
 #define MOTOR_IN1_PIN 11
 #define MOTOR_IN2_PIN 10
 #define MOTOR_IN3_PIN 18
 #define MOTOR_IN4_PIN 19
 
-/* Definicje aliasów PWM z Device Tree */
 #define PWM_A_ALIAS DT_ALIAS(pwm_d3)     // ENA
 #define PWM_B_ALIAS DT_ALIAS(pwm_led0)   // ENB
 
 #define PERIOD_NS 50000
+#define MIN_PULSE_NS 35000
+#define MAX_PULSE_NS 45000
+#define MAX_SPEED 90
 
 Engine::Engine(const struct device* gpio)
-    : pwm_a_spec(PWM_DT_SPEC_GET(PWM_A_ALIAS)),
-      pwm_b_spec(PWM_DT_SPEC_GET(PWM_B_ALIAS)),
+    : motor_a(PWM_DT_SPEC_GET(PWM_A_ALIAS)),
+      motor_b(PWM_DT_SPEC_GET(PWM_B_ALIAS)),
       gpio_dev(gpio) {}
 
 bool Engine::init() {
-    /* Sprawdzenie, czy urządzenia PWM są gotowe */
-    if (!device_is_ready(pwm_a_spec.dev)) {
-        printk("PWM A device not ready\n");
+    if (!device_is_ready(motor_a.dev) || !device_is_ready(motor_b.dev) || !device_is_ready(gpio_dev)) {
+        printk("Device not ready\n");
         return false;
     }
 
-    if (!device_is_ready(pwm_b_spec.dev)) {
-        printk("PWM B device not ready\n");
-        return false;
+    int pins[] = {MOTOR_IN1_PIN, MOTOR_IN2_PIN, MOTOR_IN3_PIN, MOTOR_IN4_PIN};
+    for (int pin : pins) {
+        if (gpio_pin_configure(gpio_dev, pin, GPIO_OUTPUT_INACTIVE) < 0) {
+            printk("Error configuring GPIO pin %d\n", pin);
+            return false;
+        }
     }
 
-    /* Sprawdzenie, czy kontroler GPIO jest gotowy */
-    if (!device_is_ready(gpio_dev)) {
-        printk("GPIO device not ready\n");
-        return false;
-    }
-
-    /* Konfiguracja pinów GPIO jako wyjścia, początkowo wyłączone */
-    int ret;
-
-    ret = gpio_pin_configure(gpio_dev, MOTOR_IN1_PIN, GPIO_OUTPUT_INACTIVE);
-    if (ret < 0) {
-        printk("Error configuring GPIO_IN1 (D2): %d\n", ret);
-        return false;
-    }
-
-    ret = gpio_pin_configure(gpio_dev, MOTOR_IN2_PIN, GPIO_OUTPUT_INACTIVE);
-    if (ret < 0) {
-        printk("Error configuring GPIO_IN2 (D5): %d\n", ret);
-        return false;
-    }
-
-    ret = gpio_pin_configure(gpio_dev, MOTOR_IN3_PIN, GPIO_OUTPUT_INACTIVE);
-    if (ret < 0) {
-        printk("Error configuring GPIO_IN3 (D6): %d\n", ret);
-        return false;
-    }
-
-    ret = gpio_pin_configure(gpio_dev, MOTOR_IN4_PIN, GPIO_OUTPUT_INACTIVE);
-    if (ret < 0) {
-        printk("Error configuring GPIO_IN4 (D7): %d\n", ret);
-        return false;
-    }
-    setMotorSpeedA(0);
-    setMotorSpeedB(0);
-
+    setMotorSpeed(0, motor_a);
+    setMotorSpeed(0, motor_b);
     printk("Engine initialized successfully\n");
     return true;
 }
 
-void Engine::setMotorSpeedA(uint32_t pulse_ns) {
-    if (pulse_ns > PERIOD_NS) {
-        pulse_ns = PERIOD_NS; // Ogranicz wartość do maksymalnego okresu
-    }
-
-    int ret = pwm_set_dt(&pwm_a_spec, PERIOD_NS, pulse_ns);
-    if (ret < 0) {
-        printk("Failed to set PWM A: %d\n", ret);
+void Engine::setMotorSpeed(uint32_t pulse_ns, const pwm_dt_spec &pwm_spec) {
+    if (pwm_set_dt(&pwm_spec, PERIOD_NS, MIN(pulse_ns, PERIOD_NS)) < 0) {
+        printk("Failed to set PWM\n");
     }
 }
 
-void Engine::setMotorSpeedB(uint32_t pulse_ns) {
-    if (pulse_ns > PERIOD_NS) {
-        pulse_ns = PERIOD_NS; // Ogranicz wartość do maksymalnego okresu
-    }
-
-    int ret = pwm_set_dt(&pwm_b_spec, PERIOD_NS, pulse_ns);
-    if (ret < 0) {
-        printk("Failed to set PWM B: %d\n", ret);
-    }
-}
-
-void Engine::setMotorDirectionA(bool forward) {
-    if (forward) {
-        gpio_pin_set(gpio_dev, MOTOR_IN1_PIN, 1); // IN1 = HIGH
-        gpio_pin_set(gpio_dev, MOTOR_IN2_PIN, 0); // IN2 = LOW
-    } else {
-        gpio_pin_set(gpio_dev, MOTOR_IN1_PIN, 0); // IN1 = LOW
-        gpio_pin_set(gpio_dev, MOTOR_IN2_PIN, 1); // IN2 = HIGH
-    }
-}
-
-void Engine::setMotorDirectionB(bool forward) {
-    if (forward) {
-        gpio_pin_set(gpio_dev, MOTOR_IN3_PIN, 1); // IN3 = HIGH
-        gpio_pin_set(gpio_dev, MOTOR_IN4_PIN, 0); // IN4 = LOW
-    } else {
-        gpio_pin_set(gpio_dev, MOTOR_IN3_PIN, 0); // IN3 = LOW
-        gpio_pin_set(gpio_dev, MOTOR_IN4_PIN, 1); // IN4 = HIGH
-    }
+void Engine::setMotorDirection(uint8_t in1, uint8_t in2, bool forward) {
+    gpio_pin_set(gpio_dev, in1, forward);
+    gpio_pin_set(gpio_dev, in2, !forward);
 }
 
 uint32_t Engine::mapSpeedToPulse(uint8_t speed) {
-    // Zakres wejściowy: 0 - 90
-    if(speed == 0) {
-        return 0;
-    }
-    const uint32_t min_pulse_ns = 35000; // Minimalne pulse_ns dla uruchomienia silnika
-    const uint32_t max_pulse_ns = PERIOD_NS; // Maksymalne pulse_ns
-    const uint8_t max_speed = 90;        // Maksymalna wartość wejściowa
-
-    // Zabezpieczenie przed przekroczeniem zakresu
-    if (speed > max_speed) {
-        speed = max_speed;
-    }
-
-    // Mapowanie liniowe: pulse_ns = min_pulse_ns + (speed / max_speed) * (max_pulse_ns - min_pulse_ns)
-    uint32_t pulse_ns = min_pulse_ns + ((max_pulse_ns - min_pulse_ns) * speed) / max_speed;
-
-    return pulse_ns;
+    return (speed == 0) ? 0 : MIN_PULSE_NS + ((MAX_PULSE_NS - MIN_PULSE_NS) * MIN(speed, MAX_SPEED)) / MAX_SPEED;
 }
 
 void Engine::controlMotors(const DataPacket &joystickData) {
-    // Wartości z joysticka
     int8_t x = joystickData.joystickX;
     int8_t y = joystickData.joystickY;
 
-    // Obliczanie wypełnienia PWM dla każdego silnika
-    uint32_t pulseA = 0, pulseB = 0; // Wartości PWM
-    bool directionA = true, directionB = true; // Kierunki (true = do przodu)
+    uint32_t pulseA = 0, pulseB = 0;
+    bool directionA = (y > 0);
+    bool directionB = (y > 0);
 
-    // 1) Obracanie w miejscu
-    if (y == 0 && x != 0) {
-        // Dla obracania w miejscu jeden silnik do przodu, drugi do tyłu
-        pulseA = mapSpeedToPulse(abs(x));
-        pulseB = mapSpeedToPulse(abs(x));
+    if (x == 0 && y == 0) {
+        pulseA = 0;
+        pulseB = 0;
+    } 
+    else if (y == 0 && x != 0) {
+        pulseA = mapSpeedToPulse(abs(x)/5); // Slower turn
+        pulseB = mapSpeedToPulse(abs(x)/5); // Slower turn
 
-        directionA = (x < 0); // Jeśli X < 0, prawy silnik do przodu
-        directionB = (x > 0); // Jeśli X > 0, lewy silnik do przodu
+        directionA = (x < 0);
+        directionB = (x > 0);
     }
-    // 2) Jazda w linii prostej
     else if (x == 0 && y != 0) {
-        // Oba silniki z tą samą prędkością i kierunkiem
         pulseA = mapSpeedToPulse(abs(y));
         pulseB = mapSpeedToPulse(abs(y));
 
-        directionA = (y > 0); // Jeśli Y > 0, jedziemy do przodu
+        directionA = (y > 0);
         directionB = (y > 0);
     }
-    // 3) Skręcanie podczas ruchu
-    else if (x != 0 && y != 0) {
-        // Dla skrętu różnicujemy prędkości obu silników
-        int8_t speedA = y + x; // Dodajemy wpływ X na prawy silnik
-        int8_t speedB = y - x; // Odejmujemy wpływ X na lewy silnik
-
-        // Normalizacja prędkości do zakresu -90 do 90
-        speedA = (speedA > 90) ? 90 : (speedA < -90 ? -90 : speedA);
-        speedB = (speedB > 90) ? 90 : (speedB < -90 ? -90 : speedB);
-
-        pulseA = mapSpeedToPulse(abs(speedA));
-        pulseB = mapSpeedToPulse(abs(speedB));
-
-        directionA = (speedA > 0); // Jeśli > 0, jedziemy do przodu
-        directionB = (speedB > 0);
-    }
-    // 4) Stop (X == 0 i Y == 0)
     else {
-        pulseA = 0;
-        pulseB = 0;
-        directionA = true; // Domyślnie kierunek do przodu
-        directionB = true;
+        int baseSpeed = abs(abs(y) > abs(x) ? abs(y) : abs(x));
+        int diff = abs(abs(y) - abs(x));
+        if(x > 0) {
+            if(diff == 0){
+                pulseA = mapSpeedToPulse(baseSpeed/3);
+                pulseB = mapSpeedToPulse(baseSpeed);
+            } else {
+                pulseA = mapSpeedToPulse(baseSpeed - diff);
+                pulseB = mapSpeedToPulse(baseSpeed);
+            }
+        } else {
+            if(diff == 0){
+                pulseA = mapSpeedToPulse(baseSpeed);
+                pulseB = mapSpeedToPulse(baseSpeed/3);
+            } else {
+                pulseA = mapSpeedToPulse(baseSpeed);
+                pulseB = mapSpeedToPulse(baseSpeed - diff);
+            }
+        }
     }
 
-    // Ustawienie prędkości i kierunków
-    setMotorDirectionA(directionA);
-    setMotorDirectionB(directionB);
+    setMotorDirection(MOTOR_IN1_PIN, MOTOR_IN2_PIN, directionA);
+    setMotorDirection(MOTOR_IN3_PIN, MOTOR_IN4_PIN, directionB);
 
-    setMotorSpeedA(pulseA);
-    setMotorSpeedB(pulseB);
+    setMotorSpeed(pulseA, motor_a);
+    setMotorSpeed(pulseB, motor_b);
 }

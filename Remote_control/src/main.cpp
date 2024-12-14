@@ -53,8 +53,8 @@ int main(void) {
         DataPacket packet = radio.get_current_packet();
 
         // Log received data
-        // printk("Received: joystickX=%d, joystickY=%d, buttonPressed=%d\n",
-        //        packet.joystickX, packet.joystickY, packet.buttonPressed);
+        printk("Received: joystickX=%d, joystickY=%d, buttonPressed=%d\n",
+               packet.joystickX, packet.joystickY, packet.buttonPressed);
 
         // Control motors based on received packet
         engine.controlMotors(packet);

@@ -12,8 +12,6 @@
 		"nrf-connect.applications": [
 			"${workspaceFolder}"
 		],
-		"nrf-connect.topdir": "c:\\Users\\wojte\\NXP_proj\\zephyrproject",
-		"nrf-connect.toolchain.path": "${nrf-connect.zephyrsdk:0.17.0}",
 		"files.associations": {
 			"memory": "cpp"
 		},
