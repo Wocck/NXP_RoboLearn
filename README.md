@@ -4,7 +4,7 @@
 
 1. MIMXRT1064_EVK Pinout:
 
-![Arduino Interface Pinout](images/arduino_interface.png)
+![Arduino Interface Pinout](docs/images/arduino_interface.png)
 
 2. Wykorzystywane moduły i ich dokumentacje
  - Ultradżwiękowy czujnik odległości **HC-SR04** : [Datasheet](https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf)
@@ -127,7 +127,7 @@ Te moduły to: **HC-SR04** oraz **ST1140**.
 
 ## Przykład 1: Czujnik odległości HC-SR04
 
-![HC-SR04 example connection](images/hcsr04_conn.png)
+![HC-SR04 example connection](docs/images/hcsr04_conn.png)
 
 | Pin na płytce NXP | Pin na module HC-SR04 |
 |-------------------|-----------------------|
@@ -186,7 +186,7 @@ Czujnik odbiciowy światła ST1140 działa, emitując wiązkę światła podczer
 
 ---
 
-### Działanie modułu HC-SR04
+### Działanie modułu ST1140
 Gdy wiązka światła odbija się od obiektu, który znajduje się w zasięgu, sygnał na wyjściu czujnika zmienia się. W zależności od koloru i rodzaju powierzchni obiektu, intensywność odbitego światła może być różna. Czarny kolor pochłania światło, więc zwraca mniejszy sygnał, podczas gdy jasne kolory odbijają go lepiej.
 
 Aby oprogramować moduł musimy:
@@ -200,14 +200,64 @@ Aby oprogramować moduł musimy:
 
 ## Interfejs I2C z użyciem modułu AHT40
 
-### Ćwiczenie
-
 W tym ćwiczeniu zbudujemy bardziej zaawansowany program, który będzie korzystał z kilku plików źródłowych. Taki podział pozwala na lepszą organizację kodu, ułatwia jego utrzymanie oraz testowanie poszczególnych modułów. Program będzie dotyczył komunikacji I2C z użyciem modułu AHT40, który jest czujnikiem temperatury i wilgotności. W ramach ćwiczenia nauczymy się, jak skonfigurować interfejs I2C, jak komunikować się z modułem AHT40 oraz jak odczytywać i interpretować dane z tego czujnika. Przykładowy kod znajdziesz w plikach `main_i2c.cpp`, `aht40.cpp`, `aht40.h` oraz `mimxrt1064_evk.overlay`.
 
 #### Konfiguracja interfejsu I2C
-W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację interfejsu I2C dla modułu AHT40:
--  
+W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację interfejsu I2C:
+```dts
+&lpi2c1 {
+    status = "okay";
+    pinctrl-0 = <&pinmux_lpi2c1>;
+    pinctrl-names = "default";
+};
+```
 
+** Wytłumaczenie**
+- `&lpi2c1` - Węzeł reprezentujący interfejs I2C1, należy zmienić jego pole `status` na "okay", aby włączyć interfejs.
+- `pinctrl-0` - Węzeł definiujący konfigurację pinów dla interfejsu I2C1. `pinmux_lpi2c1` to alias do węzła zdefiniowanego w `mimxrt1064_evk-pinctrl.dtsi`.
+- `pinctrl-names` - Wskazuje że będziemy używać pinów w konfiguracji domyślnej.
+
+
+**Uwaga** - adres `0x70` to adres urządzenia w formacie 8-bitowym, takiego wymaga dokumentacja Zephyr dla urządzeń I2C, który uwzględnia bit R/W w najmłodszej pozycji. W przypadku AHT20, adres ten jest zapisywany jako `0x38` w formacie 7-bitowym. W kodzie będziemy używać adresu `0x38`.
+
+#### I2C w Zephyr
+
+Na początku musimy pobrać konfigurację kontrolera I2C zdefiniowanego w pliku DTS: `const struct device *i2c_dev = DEVICE_DT_GET(DT_NODELABEL(lpi2c1));`
+Poniżej znajdują się przydane funckje do obsługi I2C:
+- `int i2c_write(const struct device *dev, const uint8_t *buf, uint32_t num_bytes, uint16_t addr);` - zapisuje dane do urządzenia pod 7-bitowym adresem `addr`.
+- `int i2c_read(const struct device *dev, uint8_t *buf, uint32_t num_bytes, uint16_t addr);` - odczytuje dane z urządzenia pod 7-bitowym adresem `addr`.
+- `int i2c_burst_read(const struct device *dev, uint16_t addr, uint8_t start_addr, uint8_t *buf, uint32_t num_bytes);` - odczytuje dane z urządzenia pod 7-bitowym adresem `addr` zaczynając od adresu `start_addr`.
+- `int i2c_burst_write(const struct device *dev, uint16_t addr, uint8_t start_addr, uint8_t *buf, uint32_t num_bytes);` - zapisuje dane do urządzenia pod 7-bitowym adresem `addr` zaczynając od adresu `start_addr`.
+- `int i2c_reg_write_byte(const struct device *dev, uint16_t addr, uint8_t reg, uint8_t value);` - Wysyła jeden bajt danych do wskazanego rejestru urządzenia I2C.
+- `int i2c_reg_read_byte(const struct device *dev, uint16_t addr, uint8_t reg, uint8_t *value);`- Odczytuje jeden bajt danych ze wskazanego rejestru urządzenia I2C.
+
+Dokumentację I2C w Zephyr znajdziesz [tutaj](https://docs.zephyrproject.org/apidoc/latest/group__i2c__interface.html).
+Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\i2c.h`
+
+#### Oprogramowanie modułu - ćwiczenie
+
+1. W dokumentacji na stronie 8 możemy wyczytać instrukcje odczytu danych z czujnika. Znajdź i przeczytaj je.
+2. Zaimplementuj funkcję która odczyta statusu kalibracji przy uruchomieniu zgodnie z dokumentacją:
+   - rejestr `0x71`.
+   - metoda odczytu rejestru `i2c_reg_read_byte()`.
+3. Zaimplementuj funkcję inicjalizacji czujnika zgodnie z dokumentacją:
+   - Jeśli bit [3] statusu kalibracji odczytanego z rejestru `0x71` jest równy `0`, należy wysłać polecenie inicjalizacyjne `0xBE`.
+   - Komenda `0xBE` wymaga przesłania dwóch parametrów: pierwszy bajt `0x08`, drugi bajt `0x00`.
+   - Po wysłaniu komendy poczekaj 10 ms na zakończenie inicjalizacji.
+
+4. Zaimplementuj funkcję wyzwalania pomiaru i sprawdzania jego zakończenia:
+   - Wyślij komendę `0xAC` wraz z parametrami: pierwszy bajt `0x33`, drugi bajt `0x00`.
+   - Po wysłaniu komendy poczekaj, aż pomiar się zakończy:
+     - Sprawdzaj bit [7] w rejestrze statusu `0x71`. Jeśli jest równy `0`, pomiar został zakończony.
+     - Jeśli bit [7] jest równy `1`, czekaj i sprawdzaj ponownie (np. w odstępach co 10 ms).
+
+5. Zaimplementuj funkcję odczytu wyników pomiaru:
+   - Po zakończeniu pomiaru odczytaj 6 bajtów danych z czujnika. Dane te zawierają:
+     - Wilgotność względna: 20-bitowa wartość w bajtach [1], [2], [3] (najstarsze bity w [1], najmłodsze w [3]).
+     - Temperatura: 20-bitowa wartość w bajtach [3], [4], [5] (najstarsze bity w [3], najmłodsze w [5]).
+   - Oblicz wartości wilgotności i temperatury:
+     - Wilgotność względna = `(wartość wilgotności / 1048576) * 100 [%]`.
+     - Temperatura = `(wartość temperatury / 1048576) * 200 - 50 [°C]`.
 
 ## Interfejs SPI z użyciem modułu nRF24L01
 
@@ -223,45 +273,104 @@ W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację interfejsu I2C dla modu�
 | GPIO_SD_B0_03         | D12                   | &gpio3   15                | MISO                       | Dane odbierane z modułu|
 | GPIO_SD_B0_00         | D13                   | &gpio3   12                | SCK                        | Zegar SPI              |
 
+### Konfiguracja SPI
+W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację dla SPI:
 
-Moduł na esp32:
-```
-SPI Speedz	= 10 Mhz
-STATUS		= 0x0e RX_DR=0 TX_DS=0 MAX_RT=0 RX_P_NO=7 TX_FULL=0
-RX_ADDR_P0-1	= 0x3130303031 0xc2c2c2c2c2
-RX_ADDR_P2-5	= 0xc3 0xc4 0xc5 0xc6
-TX_ADDR		= 0x3130303031
-RX_PW_P0-6	= 0x20 0x20 0x20 0x20 0x20 0x20
-EN_AA		= 0x3f
-EN_RXADDR	= 0x03
-RF_CH		= 0x4c
-```
+```dts
+&lpspi1 {
+    status = "okay";
+    cs-gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
+};
 
-Moduł na nxp:
-```
-nRF24L01+ Receiver
-Testing nRF24L01 Registers...
-SPI Write: Cmd=0x00, Data= 0x0B
-CONFIG register (0x00): 0x0B
-SPI Write: Cmd=0x02, Data= 0x01
-EN_RXADDR register (0x02): 0x01
-SPI Write: Cmd=0x05, Data= 0x4C
-RF_CH register (0x05): 0x4C
-SPI Write: Cmd=0x06, Data= 0x26
-RF_SETUP register (0x06): 0x26
-SPI Write: Cmd=0x07, Data= 0x0E
-STATUS register (0x07): 0x0E
-SPI Write: Cmd=0x0A, Data= 0x31 0x30 0x30 0x30 0x31
-RX_ADDR_P0 register (0x0A): 0x31 0x30 0x30 0x30 0x31 
-SPI Write: Cmd=0x11, Data= 0x20
-RX_PW_P0 register (0x11): 0x20
-Register test complete.
-SPI Write: Cmd=0x07, Data= 0x0E
-SPI Write: Cmd=0x07, Data= 0x0E
-SPI Write: Cmd=0x07, Data= 0x0E
-SPI Write: Cmd=0x07, Data= 0x0E
-SPI Write: Cmd=0x07, Data= 0x0E
-SPI Write: Cmd=0x07, Data= 0x0E
+&gpio1 {
+    status = "okay";
+};
+
+&gpio3 {
+    status = "okay";
+};
 ```
 
-link: https://github.com/controllerstech/NRF24L01/blob/master/NRF24L01.h
+**Wytłumaczenie:**
+- `&lpspi1`: Węzeł reprezentujący kontroler SPI1. Zmieniamy `status` na `"okay"`, aby włączyć SPI.
+- `cs-gpios`: Definiuje pin GPIO, który pełni funkcję Chip Select (CSN) dla modułu nRF24L01.
+- `&gpio1` i `&gpio3`: Aktywują magistrale GPIO potrzebne do obsługi pinów CE i CSN.
+
+### Podstawy komunikacji SPI
+
+SPI (Serial Peripheral Interface) to protokół komunikacyjny typu master-slave, w którym master (mikrokontroler) steruje przesyłaniem danych. Interfejs SPI wymaga kilku linii:
+1. **SCK (zegar):** Synchronizuje transfer danych.
+2. **MOSI (Master Out Slave In):** Dane przesyłane od master do slave.
+3. **MISO (Master In Slave Out):** Dane przesyłane od slave do master.
+4. **CSN (Chip Select):** Wybiera aktywne urządzenie slave.
+
+### Przydatne funkcje Zephyr SPI API
+- `spi_transceive`: Realizuje jednoczesne wysyłanie i odbieranie danych w ramach jednego transferu.
+- `spi_write`: Przesyła dane bez odbioru.
+- `spi_read`: Odbiera dane bez przesyłania.
+- `gpio_pin_set`: Służy do sterowania pinem CE w nRF24L01.
+
+Dokumentacja SPI w Zephyr znajduje się [tutaj](https://docs.zephyrproject.org/apidoc/latest/group__spi__interface.html).
+Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\spi.h`
+
+### Cwiczenie - Odbiór danych w trybie pooling z nRF24L01
+
+1. Skonfigurować interfejs SPI do komunikacji z modułem:
+    - SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_HOLD_ON_CS;
+    - Ustawienie częstotliwości zegara na 100kHz.
+    - Usatwienie pinu CS
+np.
+```C++
+spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_HOLD_ON_CS;
+spi_cfg.frequency = 100000;
+spi_cfg.slave = 0U;
+spi_cfg.cs.gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(lpspi1), cs_gpios);
+```
+
+1. Ustawić domyślne wartości rejestrów modułu, takie jak:
+    - `CONFIG_REG`: Włącz tryb odbiornika i odpowiednie przerwania.
+    - `EN_RXADDR`: Aktywuj odpowiednie kanały RX.
+    - `SETUP_AW`: Określ szerokość adresu.
+    - `RF_CH`: Ustaw częstotliwość.
+    - `RF_SETUP`: Skonfiguruj moc i prędkość transmisji.
+Wszystkie wartości rejestrów możemy odczytać z tabeli `Register map table` na stronie 54 w dokumentacji modułu.
+
+**Uwaga**
+1. Podczas konfiguracji rejestró należy ustawić pin CE na stan niski a po konfiguracji w celu uruchomienia trybu odbioru należy ustawić go na stan Wysoki.
+2. Moduł nRF24L01 wymaga zasilania 3.3V, nie podłączaj go do zasilania 5V.
+3. W przypadku problemów z komunikacją, sprawdź połączenia, konfigurację pinów i rejestrów oraz czy moduł jest zasilany. W przypadku błędnej konfiguracji modułu w kodzie czasem pomaga odłączenie i podłączenie zasilania.
+4. Wartosci rejestrów należy ustawiać za pomocą wysania wartości `uint8_t cmd = 0x20 | (reg & 0x1F);` przez SPI. Gdzie `reg` to adres rejestru, a `cmd` to komenda zapisu do rejestru. 
+
+### Ważne rejestry nRF24L01
+1. **CONFIG_REG (0x00):**
+   - Bit [0]: Tryb pracy (1 = RX, 0 = TX).
+   - Bit [1]: Włącz przerwania RX.
+
+2. **STATUS_REG (0x07):**
+   - Bit [6]: Flaga RX_DR (dane gotowe do odbioru).
+   - Bit [4]: Flaga TX_DS (wysłano poprawnie).
+
+3. **RX_ADDR_P0 (0x0A):**
+   - Adres odbiorcy dla kanału RX0 (do 5 bajtów).
+
+4. **RF_CH (0x05):**
+   - Częstotliwość pracy modułu (2400 MHz + `RF_CH`).
+
+5. **RX_PW_P0 (0x11):**
+   - Liczba bajtów danych odbieranych w kanału RX0.
+
+---
+
+### Ćwiczenie
+
+1. Połącz mikrokontroler z modułem nRF24L01 zgodnie ze schematem połączeń.
+2. W dokumentacji nRF24L01 znajdź opisy rejestrów `CONFIG_REG`, `STATUS_REG` i `RX_ADDR_P0`. Przeczytaj, jak wpływają na działanie modułu.
+3. Zaimplementuj funkcję inicjalizacji modułu nRF24L01:
+   - Skonfiguruj domyślne wartości rejestrów.
+   - Zresetuj flagi w rejestrze STATUS.
+   - Włącz odbiornik, ustawiając CE na wysoki.
+4. Zaimplementuj funkcję odczytu danych:
+   - Sprawdź flagę RX_DR w rejestrze STATUS.
+   - Jeśli dane są gotowe, odczytaj payload z `R_RX_PAYLOAD`.
+   - Wyświetl odebrane dane w konsoli.
+5. Przetestuj program, przesyłając dane z nadajnika (np. joysticka) i odbierając je na odbiorniku.
