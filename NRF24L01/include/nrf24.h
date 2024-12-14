@@ -73,6 +73,15 @@ private:
      */
     int read_register(uint8_t reg, uint8_t* data, size_t len);
 
+    /**
+     * @brief Send a command to the nRF24L01+ module.
+     * @param command Command to send.
+     * @param response Pointer to the buffer to store the response.
+     * @param response_len Length of the response buffer.
+     * @return 0 on success, negative error code otherwise.
+     */
+    int send_command(uint8_t command, uint8_t* response, size_t response_len);
+
 public:
      /**
      * @brief Constructor for the NRF24 class.
@@ -81,10 +90,9 @@ public:
     NRF24(const struct device* spi);
 
     /**
-     * @brief Reset specific or all nRF24L01+ registers.
-     * @param reg Register address to reset. Pass 0 to reset all registers.
+     * @brief Reset all nRF24L01+ registers.
      */
-    void reset(uint8_t reg);
+    void reset();
 
     /**
      * @brief Initialize the nRF24L01+ module.

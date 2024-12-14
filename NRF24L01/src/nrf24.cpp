@@ -11,6 +11,7 @@
 #define RX_PW_P0 0x11
 #define R_RX_PAYLOAD 0x61
 #define FLUSH_RX 0xE2
+#define FLUSH_TX 0xE1
 #define EN_AA 0x01
 #define TX_ADDR 0x10
 
@@ -101,52 +102,81 @@ int NRF24::read_register(uint8_t reg, uint8_t* data, size_t len) {
     return ret;
 }
 
-void NRF24::reset(uint8_t reg) {
+int NRF24::send_command(uint8_t command, uint8_t* response, size_t response_len) {
+    if (!spi_dev) {
+        printk("SPI device not ready\n");
+        return -1;
+    }
+
+    tx_buf[0] = command;
+
+    struct spi_buf spi_tx = { .buf = tx_buf, .len = 1 };
+    struct spi_buf spi_rx = { .buf = rx_buf, .len = response_len + 1 };
+
+    struct spi_buf_set tx = { .buffers = &spi_tx, .count = 1 };
+    struct spi_buf_set rx = { .buffers = &spi_rx, .count = 1 };
+
+    int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
+    if (ret == 0 && response && response_len > 0) {
+        memcpy(response, &rx_buf[1], response_len);
+    }
+
+    return ret;
+}
+
+void NRF24::reset() {
     gpio_pin_set(gpio_dev_1, CE_GPIO_PIN, 0);
     k_sleep(K_MSEC(2));
 
-    if (reg == STATUS_REG) {
-        uint8_t status_reset = 0x00;
-        write_register(STATUS_REG, &status_reset, 1);
-    } else {
-        // Reset podstawowych rejestrów nRF24L01
-        uint8_t config_reset = 0x08;
-        write_register(CONFIG_REG, &config_reset, 1);
+    send_command(FLUSH_RX, nullptr, 0);
+    send_command(FLUSH_TX, nullptr, 0);
 
-        uint8_t en_aa_reset = 0x3F;
-        write_register(EN_AA, &en_aa_reset, 1);
+    // Reset podstawowych rejestrów nRF24L01
+    uint8_t config_reset = 0x08;
+    write_register(CONFIG_REG, &config_reset, 1);
 
-        uint8_t en_rxaddr_reset = 0x03;
-        write_register(EN_RXADDR, &en_rxaddr_reset, 1);
+    uint8_t en_aa_reset = 0x3F;
+    write_register(EN_AA, &en_aa_reset, 1);
 
-        uint8_t addr_width_reset = 0x03;
-        write_register(SETUP_AW, &addr_width_reset, 1);
+    uint8_t en_rxaddr_reset = 0x03;
+    write_register(EN_RXADDR, &en_rxaddr_reset, 1);
 
-        uint8_t rf_ch_reset = 0x02;
-        write_register(RF_CH, &rf_ch_reset, 1);
+    uint8_t addr_width_reset = 0x03;
+    write_register(SETUP_AW, &addr_width_reset, 1);
 
-        uint8_t rf_setup_reset = 0x0E;
-        write_register(RF_SETUP, &rf_setup_reset, 1);
+    uint8_t rf_ch_reset = 0x02;
+    write_register(RF_CH, &rf_ch_reset, 1);
 
-        // Reset adresów RX i TX
-        uint8_t rx_addr_p0_reset[5] = {0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
-        write_register(RX_ADDR_P0, rx_addr_p0_reset, 5);
+    uint8_t rf_setup_reset = 0x0E;
+    write_register(RF_SETUP, &rf_setup_reset, 1);
 
-        uint8_t tx_addr_reset[5] = {0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
-        write_register(TX_ADDR, tx_addr_reset, 5);
+    // Reset adresów RX i TX
+    uint8_t rx_addr_p0_reset[5] = {0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
+    write_register(RX_ADDR_P0, rx_addr_p0_reset, 5);
 
-        // Reset rozmiaru ładunków dla wszystkich kanałów
-        uint8_t payload_size_reset = 0x00;
-        write_register(RX_PW_P0, &payload_size_reset, 1);
+    uint8_t tx_addr_reset[5] = {0xE7, 0xE7, 0xE7, 0xE7, 0xE7};
+    write_register(TX_ADDR, tx_addr_reset, 5);
 
-        // Wyczyść wszystkie flagi STATUS
-        uint8_t status_clear = STATUS_CLEAR;
-        write_register(STATUS_REG, &status_clear, 1);
-    }
+    // Reset rozmiaru ładunków dla wszystkich kanałów
+    uint8_t payload_size_reset = 0x00;
+    write_register(RX_PW_P0, &payload_size_reset, 1);
+
+    // Wyczyść wszystkie flagi STATUS
+    uint8_t status_clear = STATUS_CLEAR;
+    write_register(STATUS_REG, &status_clear, 1);
 }
 
 int NRF24::init() {
     gpio_pin_set(gpio_dev_1, CE_GPIO_PIN, 0);
+
+    // Przejście przez tryb Power Down -> Power Up
+    uint8_t config = 0x00;
+    write_register(CONFIG_REG, &config, 1);
+    k_sleep(K_MSEC(5));
+
+    config = CONFIG_DEFAULT;
+    write_register(CONFIG_REG, &config, 1);
+    k_sleep(K_MSEC(5));
 
     // Initialize nRF24L01 as Receiver
     uint8_t rf_addr_width = ADDR_WIDTH_DEFAULT;
