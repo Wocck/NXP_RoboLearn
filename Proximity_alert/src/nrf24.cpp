@@ -27,8 +27,8 @@
 #define EN_AA_DEFAULT 0x01
 #define STATUS_CLEAR 0x70
 #define RX_DR_FLAG 0x40
-#define FEATURE_DEFAULT 0x01
-#define DYNPD_DEFAULT 0x04
+#define FEATURE_DEFAULT 0x06
+#define DYNPD_DEFAULT 0x01
 #define PIPE_ADDR {0xCC, 0xCE, 0xCC, 0xCE, 0xCC}
 
 
@@ -79,8 +79,11 @@ void NRF24::handle_irq() {
             current_packet = packet;
         } else {
             printk("Failed to receive payload. Resetting module...\n");
-            reset(0);
-            init();
+            send_command(FLUSH_RX, nullptr, 0);
+            send_command(FLUSH_TX, nullptr, 0);
+
+            uint8_t clear_flags = 0x40;
+            write_register(0x07, &clear_flags, 1);
         }
 
         // Clear RX_DR flag
@@ -296,7 +299,7 @@ int NRF24::receive_payload(DataPacket* packet) {
             memcpy(packet, &rx_buf[1], payload_size);
 
             // Clear RX_DR flag
-            uint8_t clear = 0x40;
+            uint8_t clear = 0x70;
             write_register(STATUS_REG, &clear, 1);
         }
         return ret;
@@ -413,10 +416,51 @@ DataPacket NRF24::get_current_packet() {
 }
 
 int NRF24::send_ack_payload(const char* message) {
-    uint8_t payload[32] = {0}; // Maksymalna długość pakietu ACK payload to 32 bajty
-    snprintf((char*)payload, sizeof(payload), "%s", message); // Formatowanie wiadomości do bufora
+    uint8_t fifo_status;
+    if (read_register(0x17, &fifo_status, 1) != 0) { // FIFO_STATUS register
+        printk("Failed to read FIFO_STATUS\n");
+        return -1;
+    }
 
-    // Zapisujemy payload dla ACK w PIPE0
-    int ret = write_register(0xA8, payload, strlen((char*)payload)); // 0xA8 to polecenie W_ACK_PAYLOAD (Write ACK Payload)
-    return ret;
+    if (fifo_status & 0x20) { // TX_FULL bit
+        printk("FIFO TX is full, dropping payload\n");
+        return -1; // Nie próbuj wysyłać, jeśli FIFO jest pełne
+    }
+    if (!message) {
+        printk("Payload message is null\n");
+        return -1;
+    }
+
+    // Przygotowanie ładunku
+    uint8_t payload[32] = {0}; // Maksymalny rozmiar payloadu dla nRF24L01+
+    size_t len = strlen(message);
+    if (len > 32) {
+        printk("Payload too large\n");
+        return -1;
+    }
+
+    memcpy(payload, message, len);
+
+    // Wpisanie danych do ACK Payload FIFO
+    uint8_t cmd = 0xA8; // Komenda W_ACK_PAYLOAD (dla Pipe 0)
+    tx_buf[0] = cmd;
+    memcpy(&tx_buf[1], payload, len);
+
+    struct spi_buf spi_tx = { .buf = tx_buf, .len = len + 1 };
+    struct spi_buf spi_rx = { .buf = rx_buf, .len = len + 1 };
+    struct spi_buf_set tx = { .buffers = &spi_tx, .count = 1 };
+    struct spi_buf_set rx = { .buffers = &spi_rx, .count = 1 };
+
+    // Transmisja przez SPI
+    int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
+    if (ret < 0) {
+        printk("Failed to send ACK payload\n");
+        return ret;
+    }
+
+    // Czyszczenie flag STATUS (TX_DS, RX_DR, MAX_RT)
+    uint8_t clear_flags = 0x70;
+    write_register(STATUS_REG, &clear_flags, 1);
+
+    return 0; // Sukces
 }

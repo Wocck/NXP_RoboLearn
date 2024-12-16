@@ -118,10 +118,24 @@ void joystick_thread(void *a, void *b, void *c) {
 void proximity_thread(void *a, void *b, void *c) {
     while (1) {
         int distance = sensor.measureDistance();
+        if (distance > COLLISION_DST) {
+            char message[32]; // Buffer to hold the formatted message
+            sprintf(message, "Obstacle: %d cm", distance); // Convert integer to string and format it
+
+            k_mutex_lock(&radio_mutex, K_FOREVER);
+            if (radio.send_ack_payload(message) != 0) {
+                LOG_ERR("Failed to send ack payload");
+            }
+            k_mutex_unlock(&radio_mutex);
+        }
         if (distance >= 0 && distance < COLLISION_DST) { // Threshold of 20 cm
             if (obstacle_detected == false) {
                 k_mutex_lock(&radio_mutex, K_FOREVER);
-                radio.send_ack_payload("Obstacle detected!");
+                if(radio.send_ack_payload("Obstacle detected!") != 0) {
+                    LOG_ERR("Failed to send ack payload");
+                } else {
+                    LOG_INF("Sending: Obstacle detected!");
+                }
                 k_mutex_unlock(&radio_mutex);
             }
 
