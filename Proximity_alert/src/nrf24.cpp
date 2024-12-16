@@ -73,7 +73,9 @@ void NRF24::handle_irq() {
         if (receive_payload(&packet) == 0) {
             current_packet = packet;
         } else {
-            printk("Failed to receive payload\n");
+            printk("Failed to receive payload. Resetting module...\n");
+            reset(0);
+            init();
         }
 
         // Clear RX_DR flag

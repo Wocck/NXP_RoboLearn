@@ -14,10 +14,13 @@ class Engine {
 public:
     Engine(const struct device* gpio);
 
-    bool init();
+    int init();
     void setMotorSpeed(uint32_t pulse_ns, const pwm_dt_spec &pwm_spec);
     void setMotorDirection(uint8_t in1, uint8_t in2, bool forward);
     void controlMotors(const DataPacket &joystickData);
+    void stop();
+    bool is_move_forward(const DataPacket &joystickData);
+    void evasive_maneuver();
 
 private:
     const struct pwm_dt_spec motor_a; /**< Specyfikacja PWM dla silnika A (ENA). */

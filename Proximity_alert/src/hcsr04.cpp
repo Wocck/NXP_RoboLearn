@@ -1,26 +1,26 @@
-#include "hc-sr04.h"
+#include "hcsr04.h"
 
 HCSR04::HCSR04(const struct device* gpio_dev, uint8_t trig_pin, uint8_t echo_pin)
     : gpio_dev(gpio_dev), trig_pin(trig_pin), echo_pin(echo_pin) {}
 
-bool HCSR04::init() {
+int HCSR04::init() {
     if (!device_is_ready(gpio_dev)) {
         printk("GPIO device not ready\n");
-        return false;
+        return -1;
     }
 
     if (gpio_pin_configure(gpio_dev, trig_pin, GPIO_OUTPUT) < 0) {
         printk("Failed to configure TRIG pin\n");
-        return false;
+        return -1;
     }
 
     if (gpio_pin_configure(gpio_dev, echo_pin, GPIO_INPUT) < 0) {
         printk("Failed to configure ECHO pin\n");
-        return false;
+        return -1;
     }
 
     printk("HC-SR04 initialized successfully\n");
-    return true;
+    return 0;
 }
 
 int HCSR04::measureDistance() {

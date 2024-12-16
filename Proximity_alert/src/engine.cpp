@@ -19,24 +19,22 @@ Engine::Engine(const struct device* gpio)
       motor_b(PWM_DT_SPEC_GET(PWM_B_ALIAS)),
       gpio_dev(gpio) {}
 
-bool Engine::init() {
+int Engine::init() {
     if (!device_is_ready(motor_a.dev) || !device_is_ready(motor_b.dev) || !device_is_ready(gpio_dev)) {
         printk("Device not ready\n");
-        return false;
+        return -1;
     }
 
     int pins[] = {MOTOR_IN1_PIN, MOTOR_IN2_PIN, MOTOR_IN3_PIN, MOTOR_IN4_PIN};
     for (int pin : pins) {
         if (gpio_pin_configure(gpio_dev, pin, GPIO_OUTPUT_INACTIVE) < 0) {
             printk("Error configuring GPIO pin %d\n", pin);
-            return false;
+            return -1;
         }
     }
 
-    setMotorSpeed(0, motor_a);
-    setMotorSpeed(0, motor_b);
-    printk("Engine initialized successfully\n");
-    return true;
+    stop();
+    return 0;
 }
 
 void Engine::setMotorSpeed(uint32_t pulse_ns, const pwm_dt_spec &pwm_spec) {
@@ -107,4 +105,29 @@ void Engine::controlMotors(const DataPacket &joystickData) {
 
     setMotorSpeed(pulseA, motor_a);
     setMotorSpeed(pulseB, motor_b);
+}
+
+void Engine::stop() {
+    setMotorSpeed(0, motor_a);
+    setMotorSpeed(0, motor_b);
+}
+
+bool Engine::is_move_forward(const DataPacket  &joystick) {
+    return joystick.joystickY > 0;
+}
+
+void Engine::evasive_maneuver() {
+    setMotorDirection(MOTOR_IN1_PIN, MOTOR_IN2_PIN, false);
+    setMotorDirection(MOTOR_IN3_PIN, MOTOR_IN4_PIN, false);
+
+    setMotorSpeed(MAX_PULSE_NS, motor_a);
+    setMotorSpeed(MAX_PULSE_NS, motor_b);
+
+    k_sleep(K_MSEC(500));
+
+    setMotorDirection(MOTOR_IN1_PIN, MOTOR_IN2_PIN, true);
+    setMotorDirection(MOTOR_IN3_PIN, MOTOR_IN4_PIN, true);
+
+    setMotorSpeed(0, motor_a);
+    setMotorSpeed(0, motor_b);
 }
