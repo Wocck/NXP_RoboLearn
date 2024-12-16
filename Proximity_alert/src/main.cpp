@@ -42,6 +42,7 @@ struct k_thread motor_thread_data;
 
 // Mutex for shared resources
 struct k_mutex data_mutex;
+struct k_mutex radio_mutex;
 
 int main(void) {
     LOG_INF("Starting robot system");
@@ -75,6 +76,7 @@ int main(void) {
     radio.test_registers();
 
     k_mutex_init(&data_mutex);
+    k_mutex_init(&radio_mutex);
 
     // Create threads
     k_thread_create(&joystick_thread_data, joystick_stack, STACK_SIZE,
@@ -100,7 +102,10 @@ int main(void) {
 void joystick_thread(void *a, void *b, void *c) {
     while (1) {
         if (radio.is_receiving()) {
+            k_mutex_lock(&radio_mutex, K_FOREVER);
             DataPacket packet = radio.get_current_packet();
+            k_mutex_unlock(&radio_mutex);
+
             k_mutex_lock(&data_mutex, K_FOREVER);
             current_joystick_data = packet;
             k_mutex_unlock(&data_mutex);
@@ -114,6 +119,12 @@ void proximity_thread(void *a, void *b, void *c) {
     while (1) {
         int distance = sensor.measureDistance();
         if (distance >= 0 && distance < COLLISION_DST) { // Threshold of 20 cm
+            if (obstacle_detected == false) {
+                k_mutex_lock(&radio_mutex, K_FOREVER);
+                radio.send_ack_payload("Obstacle detected!");
+                k_mutex_unlock(&radio_mutex);
+            }
+
             k_mutex_lock(&data_mutex, K_FOREVER);
             obstacle_detected = true;
             k_mutex_unlock(&data_mutex);

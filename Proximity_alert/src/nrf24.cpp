@@ -2,18 +2,20 @@
 
 // Rejestry nRF24L01
 #define CONFIG_REG 0x00
-#define STATUS_REG 0x07
-#define RX_ADDR_P0 0x0A
+#define EN_AA 0x01
+#define EN_RXADDR 0x02
 #define SETUP_AW 0x03
 #define RF_CH 0x05
 #define RF_SETUP 0x06
-#define EN_RXADDR 0x02
+#define STATUS_REG 0x07
+#define RX_ADDR_P0 0x0A
+#define TX_ADDR 0x10
 #define RX_PW_P0 0x11
-#define R_RX_PAYLOAD 0x61
 #define FLUSH_RX 0xE2
 #define FLUSH_TX 0xE1
-#define EN_AA 0x01
-#define TX_ADDR 0x10
+#define FEATURE 0x1D
+#define DYNPD 0x1C
+#define R_RX_PAYLOAD 0x61
 
 // Maski i wartości
 #define CONFIG_DEFAULT 0x0F
@@ -22,10 +24,13 @@
 #define ADDR_WIDTH_DEFAULT 0x03
 #define RF_CH_DEFAULT 76
 #define PAYLOAD_SIZE_DEFAULT sizeof(DataPacket)
-#define EN_AA_DEFAULT 0x00
+#define EN_AA_DEFAULT 0x01
 #define STATUS_CLEAR 0x70
 #define RX_DR_FLAG 0x40
+#define FEATURE_DEFAULT 0x01
+#define DYNPD_DEFAULT 0x04
 #define PIPE_ADDR {0xCC, 0xCE, 0xCC, 0xCE, 0xCC}
+
 
 // Konstruktor klasy NRF24
 NRF24::NRF24(const struct device* gpio, const struct device* spi) : gpio_dev_1(gpio), spi_dev(spi) {
@@ -252,6 +257,12 @@ int NRF24::init() {
     uint8_t en_aa = EN_AA_DEFAULT;
     write_register(EN_AA, &en_aa, 1);
 
+    uint8_t feature = FEATURE_DEFAULT;
+    write_register(FEATURE, &feature, 1);
+
+    uint8_t dynpd = DYNPD_DEFAULT;
+    write_register(DYNPD, &dynpd, 1);
+
     uint8_t status_clear = STATUS_CLEAR;
     write_register(STATUS_REG, &status_clear, 1);
 
@@ -401,4 +412,11 @@ DataPacket NRF24::get_current_packet() {
     return current_packet;
 }
 
+int NRF24::send_ack_payload(const char* message) {
+    uint8_t payload[32] = {0}; // Maksymalna długość pakietu ACK payload to 32 bajty
+    snprintf((char*)payload, sizeof(payload), "%s", message); // Formatowanie wiadomości do bufora
 
+    // Zapisujemy payload dla ACK w PIPE0
+    int ret = write_register(0xA8, payload, strlen((char*)payload)); // 0xA8 to polecenie W_ACK_PAYLOAD (Write ACK Payload)
+    return ret;
+}

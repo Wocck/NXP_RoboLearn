@@ -15,6 +15,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <string.h>
+#include <stdio.h>
 #include <zephyr/drivers/gpio.h>
 #include "datapacket.h"
 
@@ -143,6 +144,13 @@ public:
      * @return True if data is being received, false otherwise.
      */
     bool is_receiving() { return received_data; }
+
+    /**
+     * @brief Send an acknowledgment payload to the nRF24L01+ module.
+     * @param message Pointer to the message to send.
+     * @return 0 on success, negative error code otherwise.
+     */
+    int send_ack_payload(const char* message);
 };
 
 #endif // NRF24_H
