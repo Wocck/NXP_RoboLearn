@@ -107,7 +107,9 @@ void initializeRF24() {
   }
 
   // Konfiguracja modułu radiowego
-  radio.setAutoAck(false);
+  radio.setAutoAck(true);
+  radio.enableAckPayload();
+  radio.enableDynamicPayloads();
   radio.setAddressWidth(5);
   radio.setPALevel(RF24_PA_HIGH);
   radio.setDataRate(RF24_250KBPS);
@@ -119,13 +121,17 @@ void initializeRF24() {
 }
 
 void sendData() {
-  bool success = radio.write(&data, sizeof(data));
-  Serial.println(sizeof(data));
-  if (success) {
-    Serial.println("Dane wysłane.");
-  } else {
-    Serial.println("Błąd wysyłania danych.");
-  }
+    bool success = radio.write(&data, sizeof(data));
+    if (success) {
+        if (radio.isAckPayloadAvailable()) {
+            char response[32] = {0};
+            radio.read(&response, sizeof(response));
+            Serial.print("Otrzymano odpowiedź: ");
+            Serial.println(response);
+        }
+    } else {
+      Serial.println("Błąd wysyłania danych.");
+    }
 }
 
 void setup() {
