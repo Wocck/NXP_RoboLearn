@@ -4,9 +4,9 @@
 
 1. MIMXRT1064_EVK Pinout:
 
-![Arduino Interface Pinout](docs/images/arduino_interface.png)
+![Arduino Interface Pinout](docs/images/arduino_interface.png){ width=80% style="display: block; margin: 0 auto;"}
 
-2. Wykorzystywane moduły i ich dokumentacje
+1. Wykorzystywane moduły i ich dokumentacje
  - Ultradżwiękowy czujnik odległości **HC-SR04** : [Datasheet](https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf)
  - Czujnik dbiciowy optyczny **ST1140**: [Datasheet](https://cdn-reichelt.de/documents/datenblatt/C200/ST1140.pdf)
  - Wyświetlacz LCD 1.8'' **ST7735S**: [Datasheet]()
@@ -127,7 +127,7 @@ Te moduły to: **HC-SR04** oraz **ST1140**.
 
 ## Przykład 1: Czujnik odległości HC-SR04
 
-![HC-SR04 example connection](docs/images/hcsr04_conn.png)
+![HC-SR04 example connection](docs/images/hcsr04_conn.png){ width=50% }
 
 | Pin na płytce NXP | Pin na module HC-SR04 |
 |-------------------|-----------------------|
@@ -137,7 +137,7 @@ Te moduły to: **HC-SR04** oraz **ST1140**.
 | GPIO A5           | ECHO                  |
 
 **Uwaga**: Pamiętaj aby podłaczanie modułów do płytki odbywało się bez podłączenia do źródła prądu oraz zawsze najpierw podłączaj uziemienie GND.
----
+
 
 ### Działanie modułu HC-SR04
 Moduł HC-SR04 to ultradźwiękowy czujnik odległości, który mierzy czas przelotu fal dźwiękowych między czujnikiem a przeszkodą, co pozwala na obliczenie odległości. Działa w dwóch etapach:
@@ -175,6 +175,8 @@ Przykładowy kod implementujący działanie czujnika odległości z pikającym B
  - Dodaj więcej trybów "pikania" aby czujnik dawał więcej informacji co do odległości
  - Zamień buzzer na diodę (pamiętaj o odpowiednim rezystorze!)
 
+---
+
 ## Przykład 2: czujnik odbiciowy ST1140
 Czujnik odbiciowy światła ST1140 działa, emitując wiązkę światła podczerwonego (IR) z wbudowanej diody LED. Gdy wiązka ta odbije się od powierzchni i wróci do fotodetektora (fototranzystora lub fotodioda), czujnik wykrywa obecność obiektu. Jest często używany do detekcji linii lub obiektów na krótkim dystansie, na przykład w robotyce do śledzenia linii.
 
@@ -184,7 +186,6 @@ Czujnik odbiciowy światła ST1140 działa, emitując wiązkę światła podczer
 | 5V                | VCC                   |
 | GPIO A5           | S                     |
 
----
 
 ### Działanie modułu ST1140
 Gdy wiązka światła odbija się od obiektu, który znajduje się w zasięgu, sygnał na wyjściu czujnika zmienia się. W zależności od koloru i rodzaju powierzchni obiektu, intensywność odbitego światła może być różna. Czarny kolor pochłania światło, więc zwraca mniejszy sygnał, podczas gdy jasne kolory odbijają go lepiej.
@@ -197,6 +198,7 @@ Aby oprogramować moduł musimy:
  ### Ćwiczenie
  Oprogramuj moduł tak aby zwrócił informację czy napotkał kolor pochłaniający czy odbijający. Pamiętaj o użyciu poprawnych flag przy konfiguracji pinu wejściowego aby zapobiec niestabilności sygnału, gdy nie ma odbicia. Przykładowy kod znajdziesz w pliku `main_st1140.cpp`.
 
+---
 
 ## Ćwiczenie 1: I2C z użyciem Wyświetlacza OLED 0,96"
 
@@ -259,6 +261,8 @@ Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\i2c.h`
      - Wilgotność względna = `(wartość wilgotności / 1048576) * 100 [%]`.
      - Temperatura = `(wartość temperatury / 1048576) * 200 - 50 [°C]`.
 
+---
+
 ## Ćwiczenie 2: SPI z użyciem modułu nRF24L01
 
 ### Schemat Połączeń
@@ -272,6 +276,11 @@ Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\i2c.h`
 | GPIO_SD_B0_02         | D11                   | &gpio3   14                | MOSI                       | Dane wysyłane do modułu|
 | GPIO_SD_B0_03         | D12                   | &gpio3   15                | MISO                       | Dane odbierane z modułu|
 | GPIO_SD_B0_00         | D13                   | &gpio3   12                | SCK                        | Zegar SPI              |
+
+**Pinout modułu nRF24L01:** 
+![nRF24L01 Pinout](docs/images/nrf24l01.png){ width=50% }
+
+
 
 ### Konfiguracja SPI
 W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację dla SPI:
