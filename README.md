@@ -198,11 +198,11 @@ Aby oprogramować moduł musimy:
  Oprogramuj moduł tak aby zwrócił informację czy napotkał kolor pochłaniający czy odbijający. Pamiętaj o użyciu poprawnych flag przy konfiguracji pinu wejściowego aby zapobiec niestabilności sygnału, gdy nie ma odbicia. Przykładowy kod znajdziesz w pliku `main_st1140.cpp`.
 
 
-## Interfejs I2C z użyciem modułu AHT40
+## Ćwiczenie 1: I2C z użyciem Wyświetlacza OLED 0,96"
 
 W tym ćwiczeniu zbudujemy bardziej zaawansowany program, który będzie korzystał z kilku plików źródłowych. Taki podział pozwala na lepszą organizację kodu, ułatwia jego utrzymanie oraz testowanie poszczególnych modułów. Program będzie dotyczył komunikacji I2C z użyciem modułu AHT40, który jest czujnikiem temperatury i wilgotności. W ramach ćwiczenia nauczymy się, jak skonfigurować interfejs I2C, jak komunikować się z modułem AHT40 oraz jak odczytywać i interpretować dane z tego czujnika. Przykładowy kod znajdziesz w plikach `main_i2c.cpp`, `aht40.cpp`, `aht40.h` oraz `mimxrt1064_evk.overlay`.
 
-#### Konfiguracja interfejsu I2C
+### Konfiguracja interfejsu I2C
 W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację interfejsu I2C:
 ```dts
 &lpi2c1 {
@@ -220,7 +220,7 @@ W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację interfejsu I2C:
 
 **Uwaga** - adres `0x70` to adres urządzenia w formacie 8-bitowym, takiego wymaga dokumentacja Zephyr dla urządzeń I2C, który uwzględnia bit R/W w najmłodszej pozycji. W przypadku AHT20, adres ten jest zapisywany jako `0x38` w formacie 7-bitowym. W kodzie będziemy używać adresu `0x38`.
 
-#### I2C w Zephyr
+### I2C w Zephyr
 
 Na początku musimy pobrać konfigurację kontrolera I2C zdefiniowanego w pliku DTS: `const struct device *i2c_dev = DEVICE_DT_GET(DT_NODELABEL(lpi2c1));`
 Poniżej znajdują się przydane funckje do obsługi I2C:
@@ -234,7 +234,7 @@ Poniżej znajdują się przydane funckje do obsługi I2C:
 Dokumentację I2C w Zephyr znajdziesz [tutaj](https://docs.zephyrproject.org/apidoc/latest/group__i2c__interface.html).
 Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\i2c.h`
 
-#### Oprogramowanie modułu - ćwiczenie
+### Oprogramowanie modułu - ćwiczenie
 
 1. W dokumentacji na stronie 8 możemy wyczytać instrukcje odczytu danych z czujnika. Znajdź i przeczytaj je.
 2. Zaimplementuj funkcję która odczyta statusu kalibracji przy uruchomieniu zgodnie z dokumentacją:
@@ -259,7 +259,7 @@ Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\i2c.h`
      - Wilgotność względna = `(wartość wilgotności / 1048576) * 100 [%]`.
      - Temperatura = `(wartość temperatury / 1048576) * 200 - 50 [°C]`.
 
-## Interfejs SPI z użyciem modułu nRF24L01
+## Ćwiczenie 2: SPI z użyciem modułu nRF24L01
 
 ### Schemat Połączeń
 
@@ -374,3 +374,13 @@ Wszystkie wartości rejestrów możemy odczytać z tabeli `Register map table` n
    - Jeśli dane są gotowe, odczytaj payload z `R_RX_PAYLOAD`.
    - Wyświetl odebrane dane w konsoli.
 5. Przetestuj program, przesyłając dane z nadajnika (np. joysticka) i odbierając je na odbiorniku.
+
+## Ćwiczenie 3: UART z użyciem ESP32 WROOM DevKit
+
+### Konfiguracja UART
+
+### Podstawy komunikacji UART
+
+### Przydatne funkcje Zephyr UART API
+
+### Ćwiczenie - dwustronna komunikacja z ESP32
