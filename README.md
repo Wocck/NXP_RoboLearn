@@ -131,14 +131,57 @@ Od tego momentu musimy podłączyć zarówno port USB Debug (J41), jak i USB OTG
  - W przypadku zmiany nazwy folderów należy wejść do folderu `zephyrproject` i w wirtualnym środowisku pythona (.venv) wpisać `west update` oraz `west zephyr-export` aby zaktualizować ścieżki do folderów.
  - Upewnij się że masz zainstalowane wymagane rozszerzenia w VS Code (patrz `extensions` w pliku `zephyr-workspace.code-workspace`)
 
-### Ćwiczenia
 
-#### Wgraj i uruchom program na płytce:
+## Instrukcja korzystania z "Workspace" w Visual Studio Code
+
+Aby otworzyć (uruchomić) projekt należy otworzyć plik `zephyr-workspace.code-workspace` w Visual Studio Code i nacisnąć przycisk w prawym dolnym rogu `Open Workspace` lub wybrać `File -> Open workspace from file`.
+
+Workspace został skonfigurowany tak, aby wspierać rozwój projektów embedded z użyciem Zephyr RTOS. Poniżej opisano główne elementy pliku workspace oraz ich zastosowanie.
+1. `folders` - zawiera zmienną **path**, która wskazuje główny katalog workspace. W tym przypadku jest to folder `NXP_RoboLearn`.
+2. `settings` - zawiera ustawienia dla Visual Studio Code, takie jak:
+   - `C_Cpp.default.configurationProvider` - konfiguracja dla rozszerzenia C/C++.
+   - `C_Cpp.default.compilerPath` - ścieżka do kompilatora.
+   - `C_Cpp.default.includePath` - ścieżki do plików nagłówkowych.
+   - `C_Cpp.default.defines` - preprocesor.
+   - `C_Cpp.default.intelliSenseMode` - tryb IntelliSense.
+   - `C_Cpp.default.compileCommands` - ścieżka do pliku `compile_commands.json`.
+3. `tasks` - zawiera predefiniowane zadanie używane do budowania i whgrywania projektu na płytkę. Dostępne są następujące zadania:
+   - `West Build` - kompiluje projekt.
+   - `West Flash` - wgrywa skompilowany projekt na płytkę (z katalogu **build**).
+   - `West Build (Clean)` - Wykonuje czyste budowanie, usuwając wcześniejsze pliki builda.
+   - `West Flash (Clean Build)` - Łączy czyste budowanie z wgrywaniem firmware na płytkę.
+4. `inputs` - Sekcja ta definiuje opcje wyboru dla użytkownika:
+   - `board` - Ustawia nazwę płytki, np. mimxrt1064_evk.
+   - `project` - Lista dostępnych projektów, np. AHT40, ST1140, HCSR04.
+5. `launch` - Sekcja ta definiuje konfigurację debugowania dla Visual Studio Code.
+   - `Launch` - Umożliwia uruchamianie debugowania kodu.
+   - `Attach` - Pozwala na dołączenie debuggera do już uruchomionego programu.
+
+Dzięki tym ustawieniom możesz łatwo zarządzać projektem, kompilować go i wgrywać na płytkę, a także debugować kod.
+
+### Przydatne skróty klawiszowe
+
+| Skrót klawiszowy        | Opis                                                                 |
+|-------------------------|----------------------------------------------------------------------|
+| **Ctrl + Shift + B**    | Uruchamia Taski - prompt do uruchomienia zdefiniowanych zadań.      |
+| **Ctrl + Shift + P**    | Otwiera paletę poleceń VS Code.                                     |
+| **Ctrl + `**            | Otwiera terminal wbudowany w VS Code.                               |
+| **Ctrl + Shift + D**    | Otwiera panel debugowania.                                          |
+| **Ctrl + Shift + F**    | Otwiera panel wyszukiwania w plikach.                               |
+| **Ctrl + Shift + H**    | Otwiera panel wyszukiwania w całym projekcie.                       |
+| **Ctrl + P**            | Otwiera wybrany plik - wyszukiwarka plików po nazwie.               |
+| **Ctrl + G**            | Przechodzi do numeru linii.                                         |
+| **Ctrl + Tab**          | Przełącza się między otwartymi plikami.                             |
+| **Ctrl + Shift + v**    | Otwiera wygenerowany widok pliku readme (może być konieczne zainstalowanie rozszerzenia dla plików *markdown*)      |
+
+## Ćwiczenia
+
+### Wgraj i uruchom program na płytce:
 
 - Skonfiguruj środowisko i wgraj kod na płytkę.
 - Dioda LED powinna migać co sekundę, co potwierdza działanie pętli głównej.
 
-#### Monitorowanie portu szeregowego (Serial Monitor):
+### Monitorowanie portu szeregowego (Serial Monitor):
 
 Aby zobaczyć komunikaty wypisywane na konsolę przez `std::cout` i `printf`, otwórz **Serial Monitor** w Visual Studio Code:
 
@@ -147,14 +190,14 @@ Aby zobaczyć komunikaty wypisywane na konsolę przez `std::cout` i `printf`, ot
 3. Ustaw **baud rate** na 115200.
 4. Po nawiązaniu połączenia powinieneś zobaczyć wyjście z programu.
 
-#### Debugowanie zmiennych czasu wykonania:
+### Debugowanie zmiennych czasu wykonania:
 
 1. Otwórz debuger **Run and Debug (ctrl+shift+D**) i umieść punkty przerwania w funkcjach `measure_time_cout` oraz `measure_time_printf`.
 2. Za każdym razem, gdy kod zatrzyma się na tych funkcjach, sprawdź wartości zmiennych:
    - `cout_duration` – czas wykonania operacji `std::cout`.
    - `printf_duration` – czas wykonania operacji `printf`.
 
-#### Analiza wyników:
+### Analiza wyników:
 
 - Porównaj czasy wykonania `cout_duration` i `printf_duration`. Zwróć uwagę, czy jedna z tych funkcji zajmuje znacznie więcej czasu.
 - Na podstawie uzyskanych wyników przeanalizuj, jakie różnice występują między `std::cout` a `printf` w kontekście ich wydajności na systemach wbudowanych.
