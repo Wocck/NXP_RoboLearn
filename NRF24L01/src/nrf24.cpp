@@ -28,7 +28,7 @@
 #define PIPE_ADDR {0xCC, 0xCE, 0xCC, 0xCE, 0xCC}
 
 // Konstruktor klasy NRF24
-NRF24::NRF24(const struct device* spi) : spi_dev(nullptr), gpio_dev_1(nullptr) {
+NRF24::NRF24(const struct device* spi) : gpio_dev_1(nullptr), spi_dev(nullptr) {
     // Wywołanie set_device w konstruktorze
     if (spi && set_device(spi) == 0) {
         printk("SPI device set successfully\n");
@@ -199,9 +199,6 @@ int NRF24::init() {
 
     uint8_t en_aa = EN_AA_DEFAULT;
     write_register(EN_AA, &en_aa, 1);
-
-    uint8_t config = CONFIG_DEFAULT;
-    write_register(CONFIG_REG, &config, 1);
 
     uint8_t status_clear = STATUS_CLEAR;
     write_register(STATUS_REG, &status_clear, 1);
