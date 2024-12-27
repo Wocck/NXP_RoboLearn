@@ -4,7 +4,7 @@
 
 1. MIMXRT1064_EVK Pinout:
 
-![Arduino Interface Pinout](docs/images/arduino_interface.png){ width=80% style="display: block; margin: 0 auto;"}
+![Arduino Interface Pinout](docs/images/arduino_interface.png)
 
 1. Wykorzystywane moduły i ich dokumentacje
  - Ultradżwiękowy czujnik odległości **HC-SR04** : [Datasheet](https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf)
@@ -127,7 +127,7 @@ Te moduły to: **HC-SR04** oraz **ST1140**.
 
 ## Przykład 1: Czujnik odległości HC-SR04
 
-![HC-SR04 example connection](docs/images/hcsr04_conn.png){ width=50% }
+![HC-SR04 example connection](docs/images/hcsr04_conn.png)
 
 | Pin na płytce NXP | Pin na module HC-SR04 |
 |-------------------|-----------------------|
@@ -278,7 +278,7 @@ Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\i2c.h`
 | GPIO_SD_B0_00         | D13                   | &gpio3   12                | SCK                        | Zegar SPI              |
 
 **Pinout modułu nRF24L01:** 
-![nRF24L01 Pinout](docs/images/nrf24l01.png){ width=50% }
+![nRF24L01 Pinout](docs/images/nrf24l01.png)
 
 
 
