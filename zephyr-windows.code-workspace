@@ -108,7 +108,7 @@
 				"type": "pickString",
 				"description": "Select the project to build",
 				"options": [
-					"LIDAR"
+					"SOUND_DETECTOR"
 				]
 			}
 		]

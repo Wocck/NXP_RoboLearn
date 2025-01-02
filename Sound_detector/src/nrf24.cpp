@@ -39,9 +39,9 @@ LOG_MODULE_REGISTER(nrf24, LOG_LEVEL_INF);
 NRF24::NRF24(const struct device* gpio, const struct device* spi) : gpio_dev_1(gpio), spi_dev(spi) {
     // Wywołanie set_device w konstruktorze
     if (spi && set_device(spi) == 0) {
-        LOG_INF("SPI device set successfully\n");
+        LOG_INF("SPI device set successfully");
     } else {
-        LOG_ERR("Failed to set SPI device in constructor\n");
+        LOG_ERR("Failed to set SPI device in constructor");
     }
 
     // Inicjalizacja konfiguracji SPI
@@ -176,9 +176,9 @@ int NRF24::send_command(uint8_t command, uint8_t* response, size_t response_len)
 void NRF24::log_register(uint8_t reg) {
     uint8_t value;
     if (read_register(reg, &value, 1) == 0) {
-        LOG_INF("Rejestr 0x%02X: 0x%02X\n", reg, value);
+        LOG_INF("Rejestr 0x%02X: 0x%02X", reg, value);
     } else {
-        LOG_ERR("Błąd odczytu rejestru 0x%02X\n", reg);
+        LOG_ERR("Błąd odczytu rejestru 0x%02X", reg);
     }
 }
 
@@ -338,47 +338,47 @@ int NRF24::configure_irq() {
     gpio_init_callback(&irq_callback, irq_handler, BIT(IRQ_GPIO_PIN));
     gpio_add_callback(gpio_dev_irq, &irq_callback);
 
-    LOG_INF("IRQ pin interrupt configured\n");
+    LOG_INF("IRQ pin interrupt configured");
     return 0;
 }
 
 void NRF24::test_registers() {
     uint8_t value;
-    LOG_INF("Testing nRF24L01 Registers...\n");
+    LOG_INF("Testing nRF24L01 Registers...");
 
     // Read CONFIG register
     if (read_register(CONFIG_REG, &value, 1) == 0) {
-        LOG_INF("CONFIG register (0x00): 0x%02X\n", value);
+        LOG_INF("CONFIG register (0x00): 0x%02X", value);
     } else {
-        LOG_ERR("Failed to read CONFIG register\n");
+        LOG_ERR("Failed to read CONFIG register");
     }
 
     // Read EN_RXADDR register
     if (read_register(EN_RXADDR, &value, 1) == 0) {
-        LOG_INF("EN_RXADDR register (0x02): 0x%02X\n", value);
+        LOG_INF("EN_RXADDR register (0x02): 0x%02X", value);
     } else {
-        LOG_ERR("Failed to read EN_RXADDR register\n");
+        LOG_ERR("Failed to read EN_RXADDR register");
     }
 
     // Read RF_CH register
     if (read_register(RF_CH, &value, 1) == 0) {
-        LOG_INF("RF_CH register (0x05): 0x%02X\n", value);
+        LOG_INF("RF_CH register (0x05): 0x%02X", value);
     } else {
-        LOG_ERR("Failed to read RF_CH register\n");
+        LOG_ERR("Failed to read RF_CH register");
     }
 
     // Read RF_SETUP register
     if (read_register(RF_SETUP, &value, 1) == 0) {
-        LOG_INF("RF_SETUP register (0x06): 0x%02X\n", value);
+        LOG_INF("RF_SETUP register (0x06): 0x%02X", value);
     } else {
-        LOG_ERR("Failed to read RF_SETUP register\n");
+        LOG_ERR("Failed to read RF_SETUP register");
     }
 
     // Read STATUS register
     if (read_register(STATUS_REG, &value, 1) == 0) {
-        LOG_INF("STATUS register (0x07): 0x%02X\n", value);
+        LOG_INF("STATUS register (0x07): 0x%02X", value);
     } else {
-        LOG_ERR("Failed to read STATUS register\n");
+        LOG_ERR("Failed to read STATUS register");
     }
 
     // Read RX_ADDR_P0 register
@@ -390,23 +390,23 @@ void NRF24::test_registers() {
         }
         printk("\n");
     } else {
-        LOG_ERR("Failed to read RX_ADDR_P0 register\n");
+        LOG_ERR("Failed to read RX_ADDR_P0 register");
     }
 
     // Read RX_PW_P0 register
     if (read_register(RX_PW_P0, &value, 1) == 0) {
-        LOG_INF("RX_PW_P0 register (0x11): 0x%02X\n", value);
+        LOG_INF("RX_PW_P0 register (0x11): 0x%02X", value);
     } else {
-        LOG_ERR("Failed to read RX_PW_P0 register\n");
+        LOG_ERR("Failed to read RX_PW_P0 register");
     }
 
     if (read_register(SETUP_AW, &value, 1) == 0) {
-        LOG_INF("Addr Width register (0x03): 0x%02X\n", value);
+        LOG_INF("Addr Width register (0x03): 0x%02X", value);
     } else {
-        LOG_ERR("Failed to read RX_PW_P0 register\n");
+        LOG_ERR("Failed to read RX_PW_P0 register");
     }
 
-    LOG_INF("Register test complete.\n");
+    LOG_INF("Register test complete.");
 }
 
 DataPacket NRF24::get_current_packet() {
@@ -421,17 +421,17 @@ DataPacket NRF24::get_current_packet() {
 int NRF24::send_ack_payload(const char* message) {
     uint8_t fifo_status;
     if (read_register(0x17, &fifo_status, 1) != 0) { // FIFO_STATUS register
-        LOG_ERR("Failed to read FIFO_STATUS\n");
+        LOG_ERR("Failed to read FIFO_STATUS");
         return -1;
     }
 
     if (fifo_status & 0x20) { // TX_FULL bit
-        LOG_ERR("FIFO TX is full, dropping payload, flushing TX...\n");
+        LOG_ERR("FIFO TX is full, dropping payload, flushing TX...");
         send_command(FLUSH_TX, nullptr, 0);
         return -1; // Nie próbuj wysyłać, jeśli FIFO jest pełne
     }
     if (!message) {
-        LOG_ERR("Payload message is null\n");
+        LOG_ERR("Payload message is null");
         return -1;
     }
 
@@ -439,7 +439,7 @@ int NRF24::send_ack_payload(const char* message) {
     uint8_t payload[32] = {0}; // Maksymalny rozmiar payloadu dla nRF24L01+
     size_t len = strlen(message);
     if (len > 32) {
-        LOG_ERR("Payload too large\n");
+        LOG_ERR("Payload too large");
         return -1;
     }
 
@@ -458,7 +458,7 @@ int NRF24::send_ack_payload(const char* message) {
     // Transmisja przez SPI
     int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
     if (ret < 0) {
-        LOG_ERR("Failed to send ACK payload\n");
+        LOG_ERR("Failed to send ACK payload");
         return ret;
     }
 
@@ -472,17 +472,17 @@ int NRF24::send_ack_payload(const char* message) {
 int NRF24::send_ack_payload(const uint8_t* data, size_t length) {
     uint8_t fifo_status;
     if (read_register(0x17, &fifo_status, 1) != 0) { // FIFO_STATUS register
-        LOG_ERR("Failed to read FIFO_STATUS\n");
+        LOG_ERR("Failed to read FIFO_STATUS");
         return -1;
     }
 
     if (fifo_status & 0x20) { // TX_FULL bit
-        LOG_ERR("FIFO TX is full, dropping payload, flushing TX...\n");
+        LOG_ERR("FIFO TX is full, dropping payload, flushing TX...");
         send_command(FLUSH_TX, nullptr, 0);
         return -1; // Nie próbuj wysyłać, jeśli FIFO jest pełne
     }
     if (!data) {
-        LOG_ERR("Payload message is null\n");
+        LOG_ERR("Payload message is null");
         return -1;
     }
 
@@ -503,7 +503,7 @@ int NRF24::send_ack_payload(const uint8_t* data, size_t length) {
     // Transmisja przez SPI
     int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
     if (ret < 0) {
-        LOG_ERR("Failed to send ACK payload\n");
+        LOG_ERR("Failed to send ACK payload");
         return ret;
     }
 

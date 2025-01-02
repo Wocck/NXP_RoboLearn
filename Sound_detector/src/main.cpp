@@ -2,17 +2,17 @@
 #include <zephyr/logging/log.h>
 #include "engine.h"
 #include "nrf24.h"
-#include "hcsr04.h"
-#include "lidar.h"
+#include "microphone.h"
 
 LOG_MODULE_REGISTER(robot, LOG_LEVEL_INF);
 
 
 // Stack sizes and priorities
-#define STACK_SIZE 1024
+#define STACK_SIZE 2024
+#define MICROPHONE_STACK_SIZE 4048
 #define JOYSTICK_THREAD_PRIORITY 5
 #define MOTOR_THREAD_PRIORITY 5
-#define LIDAR_THREAD_PRIORITY 5
+#define MICROPHONE_THREAD_PRIORITY 5
 
 // Global objects
 const struct device* spi_dev = DEVICE_DT_GET(DT_NODELABEL(lpspi1));
@@ -20,28 +20,29 @@ const struct device* gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
 
 NRF24 radio(gpio_dev, spi_dev);
 Engine engine(gpio_dev);
-Lidar lidar(gpio_dev, 26, 27);
+Microphone m1(DEVICE_DT_GET(DT_NODELABEL(adc1)), 9);
+Microphone m2(DEVICE_DT_GET(DT_NODELABEL(adc1)), 10);
+Microphone m3(DEVICE_DT_GET(DT_NODELABEL(adc1)), 6);
 
 DataPacket current_joystick_data = {0, 0, 0};
 
 // Thread declarations
 void joystick_thread(void *, void *, void *);
 void motor_thread(void *, void *, void *);
-void lidar_thread(void *, void *, void *);
+void microphone_thread(void *, void *, void *);
 
 // Thread stack declarations
 K_THREAD_STACK_DEFINE(joystick_stack, STACK_SIZE);
-K_THREAD_STACK_DEFINE(lidar_stack, STACK_SIZE);
+K_THREAD_STACK_DEFINE(microphone_stack, MICROPHONE_STACK_SIZE);
 K_THREAD_STACK_DEFINE(motor_stack, STACK_SIZE);
 
 struct k_thread joystick_thread_data;
 struct k_thread motor_thread_data;
-struct k_thread lidar_thread_data;
+struct k_thread microphone_thread_data;
 
 // Mutex for shared resources
 struct k_mutex data_mutex;
 struct k_mutex radio_mutex;
-struct k_mutex lidar_mutex;
 
 
 int main(void) {
@@ -68,16 +69,29 @@ int main(void) {
         return -1;
     }
 
-    if (lidar.init() != 0) {
-        LOG_ERR("Failed to initialize lidar");
+    if (m1.init() != 0) {
+        LOG_ERR("Failed to initialize Microphone 1");
         return -1;
     }
+
+    if (m2.init() != 0) {
+        LOG_ERR("Failed to initialize Microphone 2");
+        return -1;
+    }
+
+    if (m3.init() != 0) {
+        LOG_ERR("Failed to initialize Microphone 3");
+        return -1;
+    }
+    k_sleep(K_MSEC(2000));
+    m1.calibrate();
+    m2.calibrate();
+    m3.calibrate();
 
     radio.test_registers();
 
     k_mutex_init(&data_mutex);
     k_mutex_init(&radio_mutex);
-    k_mutex_init(&lidar_mutex);
 
     k_thread_create(&joystick_thread_data, joystick_stack, STACK_SIZE,
                     joystick_thread, NULL, NULL, NULL,
@@ -88,9 +102,9 @@ int main(void) {
                     motor_thread, NULL, NULL, NULL,
                     MOTOR_THREAD_PRIORITY, 0, K_NO_WAIT);
 
-    k_thread_create(&lidar_thread_data, lidar_stack, STACK_SIZE,
-                lidar_thread, NULL, NULL, NULL,
-                LIDAR_THREAD_PRIORITY, 0, K_NO_WAIT);
+    k_thread_create(&microphone_thread_data, microphone_stack, STACK_SIZE,
+                    microphone_thread, NULL, NULL, NULL,
+                    MICROPHONE_THREAD_PRIORITY, 0, K_NO_WAIT);
 
     while (1) {
         k_sleep(K_FOREVER);
@@ -129,42 +143,37 @@ void motor_thread(void *a, void *b, void *c) {
     }
 }
 
-// Lidar thread: Control servo and measure distance
-void lidar_thread(void *a, void *b, void *c) {
-    LidarData lidarData;
+void microphone_thread(void *arg1, void *arg2, void *arg3)
+{
+    const double noise_threshold = 25.0; // Minimum total RMS to consider as sound
+    const double max_angle = 180.0;    // Maximum angle (right microphone)
 
-    while (1) {
-        for (uint8_t angle = 0; angle <= 180; angle+=2) {
-            lidar.move_to_angle(angle);
-            uint16_t distance = lidar.measure_distance();
+    while (true) {
+        // Read RMS values from all three microphones
+        double rms_left = m1.calculate_rms_with_offset();
+        double rms_front = m2.calculate_rms_with_offset();
+        double rms_right = m3.calculate_rms_with_offset();
 
-            lidarData.angle = angle;
-            lidarData.distance = distance;
+        // Total RMS for noise detection
+        double total_rms = rms_left + rms_front + rms_right;
 
-            k_mutex_lock(&radio_mutex, K_FOREVER);
-            if (radio.send_ack_payload(reinterpret_cast<uint8_t*>(&lidarData), sizeof(lidarData)) != 0) {
-                LOG_ERR("Failed to send ack payload");
-            }
-            k_mutex_unlock(&radio_mutex);
+        if (total_rms > noise_threshold) {
+            // Normalize the RMS values
+            double norm_left = rms_left / total_rms;
+            double norm_front = rms_front / total_rms;
+            double norm_right = rms_right / total_rms;
 
-            k_sleep(K_MSEC(100));
+            // Calculate the angle dynamically
+            double angle = (norm_left * 0 + norm_front * 90 + norm_right * max_angle);
+
+            // Log the calculated direction and RMS values
+            LOG_INF("Sound detected at %.2f° (L: %.2f, F: %.2f, R: %.2f)", angle, rms_left, rms_front, rms_right);
+        } else {
+            // No significant sound detected
+            LOG_INF("No significant sound detected (L: %.2f, F: %.2f, R: %.2f)", rms_left, rms_front, rms_right);
         }
 
-        for (uint8_t angle = 180; angle >= 2; angle-=2) {
-            lidar.move_to_angle(angle);
-            uint16_t distance = lidar.measure_distance();
-
-            lidarData.angle = angle;
-            lidarData.distance = distance;
-
-            k_mutex_lock(&radio_mutex, K_FOREVER);
-            if (radio.send_ack_payload(reinterpret_cast<uint8_t*>(&lidarData), sizeof(lidarData)) != 0) {
-                LOG_ERR("Failed to send ack payload");
-            }
-            k_mutex_unlock(&radio_mutex);
-
-            k_sleep(K_MSEC(100));
-        }
+        // Small delay before the next measurement
+        k_sleep(K_MSEC(50));
     }
 }
-
