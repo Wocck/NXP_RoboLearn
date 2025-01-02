@@ -1,25 +1,28 @@
 #include "hcsr04.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(HCSR04, LOG_LEVEL_INF);
 
 HCSR04::HCSR04(const struct device* gpio_dev, uint8_t trig_pin, uint8_t echo_pin)
     : gpio_dev(gpio_dev), trig_pin(trig_pin), echo_pin(echo_pin) {}
 
 int HCSR04::init() {
     if (!device_is_ready(gpio_dev)) {
-        printk("GPIO device not ready\n");
+        LOG_ERR("GPIO device not ready\n");
         return -1;
     }
 
     if (gpio_pin_configure(gpio_dev, trig_pin, GPIO_OUTPUT) < 0) {
-        printk("Failed to configure TRIG pin\n");
+        LOG_ERR("Failed to configure TRIG pin\n");
         return -1;
     }
 
     if (gpio_pin_configure(gpio_dev, echo_pin, GPIO_INPUT) < 0) {
-        printk("Failed to configure ECHO pin\n");
+        LOG_ERR("Failed to configure ECHO pin\n");
         return -1;
     }
 
-    printk("HC-SR04 initialized successfully\n");
+    LOG_INF("HC-SR04 initialized successfully\n");
     return 0;
 }
 
@@ -34,6 +37,7 @@ uint16_t HCSR04::measureDistance() {
     uint32_t start_wait = k_cycle_get_32();
     while (gpio_pin_get(gpio_dev, echo_pin) == 0) {
         if ((k_cycle_get_32() - start_wait) > timeout_cycles) {
+            LOG_ERR("Timeout waiting for echo pin to go high\n");
             return 0; // timeout
         }
     }
@@ -43,6 +47,7 @@ uint16_t HCSR04::measureDistance() {
     start_wait = k_cycle_get_32();
     while (gpio_pin_get(gpio_dev, echo_pin) == 1) {
         if ((k_cycle_get_32() - start_wait) > timeout_cycles) {
+            LOG_ERR("Timeout waiting for echo pin to go low\n");
             return 0; // timeout
         }
     }

@@ -1,4 +1,7 @@
 #include "engine.h"
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(engine, LOG_LEVEL_INF);
 
 /* GPIO and PWM Definitions */
 #define MOTOR_IN1_PIN 11
@@ -21,14 +24,14 @@ Engine::Engine(const struct device* gpio)
 
 int Engine::init() {
     if (!device_is_ready(motor_a.dev) || !device_is_ready(motor_b.dev) || !device_is_ready(gpio_dev)) {
-        printk("Device not ready\n");
+        LOG_ERR("Device not ready\n");
         return -1;
     }
 
     int pins[] = {MOTOR_IN1_PIN, MOTOR_IN2_PIN, MOTOR_IN3_PIN, MOTOR_IN4_PIN};
     for (int pin : pins) {
         if (gpio_pin_configure(gpio_dev, pin, GPIO_OUTPUT_INACTIVE) < 0) {
-            printk("Error configuring GPIO pin %d\n", pin);
+            LOG_ERR("Error configuring GPIO pin %d\n", pin);
             return -1;
         }
     }
@@ -39,7 +42,7 @@ int Engine::init() {
 
 void Engine::setMotorSpeed(uint32_t pulse_ns, const pwm_dt_spec &pwm_spec) {
     if (pwm_set_dt(&pwm_spec, PERIOD_NS, MIN(pulse_ns, PERIOD_NS)) < 0) {
-        printk("Failed to set PWM\n");
+        LOG_ERR("Failed to set PWM\n");
     }
 }
 
