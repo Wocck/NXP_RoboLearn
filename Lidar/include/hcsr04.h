@@ -1,3 +1,13 @@
+/**
+ * @file hcsr04.h
+ * @author Wojtek Sekuła
+ * @brief 
+ * @date 2025-01-02
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
+
 #ifndef HCSR04_H
 #define HCSR04_H
 

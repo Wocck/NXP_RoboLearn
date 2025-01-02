@@ -7,8 +7,6 @@
 
 LOG_MODULE_REGISTER(robot, LOG_LEVEL_INF);
 
-// Robot constances
-#define COLLISION_DST 20
 
 // Stack sizes and priorities
 #define STACK_SIZE 1024
@@ -22,11 +20,9 @@ const struct device* gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio1));
 
 NRF24 radio(gpio_dev, spi_dev);
 Engine engine(gpio_dev);
-//HCSR04 sensor(gpio_dev, 26, 27);
 Lidar lidar(gpio_dev, 26, 27);
 
 DataPacket current_joystick_data = {0, 0, 0};
-bool obstacle_detected = false;
 
 // Thread declarations
 void joystick_thread(void *, void *, void *);
@@ -83,7 +79,6 @@ int main(void) {
     k_mutex_init(&radio_mutex);
     k_mutex_init(&lidar_mutex);
 
-    // Create threads
     k_thread_create(&joystick_thread_data, joystick_stack, STACK_SIZE,
                     joystick_thread, NULL, NULL, NULL,
                     JOYSTICK_THREAD_PRIORITY, 0, K_NO_WAIT);
@@ -134,20 +129,18 @@ void motor_thread(void *a, void *b, void *c) {
     }
 }
 
+// Lidar thread: Control servo and measure distance
 void lidar_thread(void *a, void *b, void *c) {
     LidarData lidarData;
 
     while (1) {
-        // Od 0° do 180°
         for (uint8_t angle = 0; angle <= 180; angle+=2) {
             lidar.move_to_angle(angle);
             uint16_t distance = lidar.measure_distance();
 
             lidarData.angle = angle;
             lidarData.distance = distance;
-            printk("Distance: %d\n", distance);
 
-            // Wysłanie danych przez NRF24
             k_mutex_lock(&radio_mutex, K_FOREVER);
             if (radio.send_ack_payload(reinterpret_cast<uint8_t*>(&lidarData), sizeof(lidarData)) != 0) {
                 LOG_ERR("Failed to send ack payload");
@@ -157,17 +150,13 @@ void lidar_thread(void *a, void *b, void *c) {
             k_sleep(K_MSEC(100));
         }
 
-        printk("Kolejna pętla for\n");
-        // Powrót od 180° do 0°
         for (uint8_t angle = 180; angle >= 2; angle-=2) {
             lidar.move_to_angle(angle);
             uint16_t distance = lidar.measure_distance();
 
             lidarData.angle = angle;
             lidarData.distance = distance;
-            printk("Distance: %d\n", distance);
 
-            // Wysłanie danych przez NRF24
             k_mutex_lock(&radio_mutex, K_FOREVER);
             if (radio.send_ack_payload(reinterpret_cast<uint8_t*>(&lidarData), sizeof(lidarData)) != 0) {
                 LOG_ERR("Failed to send ack payload");

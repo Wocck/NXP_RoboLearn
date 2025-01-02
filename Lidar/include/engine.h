@@ -23,8 +23,8 @@ public:
     void evasive_maneuver();
 
 private:
-    const struct pwm_dt_spec motor_a; /**< Specyfikacja PWM dla silnika A (ENA). */
-    const struct pwm_dt_spec motor_b; /**< Specyfikacja PWM dla silnika B (ENB). */
+    const struct pwm_dt_spec motor_a; /**< Specyfikacja PWM dla silnika Prawego (ENA). */
+    const struct pwm_dt_spec motor_b; /**< Specyfikacja PWM dla silnika Lewego (ENB). */
 
     const struct device *gpio_dev; /**< Wskaźnik do kontrolera GPIO. */
     uint32_t mapSpeedToPulse(uint8_t speed);

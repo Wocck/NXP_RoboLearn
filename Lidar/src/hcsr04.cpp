@@ -25,23 +25,31 @@ int HCSR04::init() {
 
 uint16_t HCSR04::measureDistance() {
     uint32_t start, end;
+    const uint32_t timeout_cycles = sys_clock_hw_cycles_per_sec() / 10; // 100 ms
 
     gpio_pin_set(gpio_dev, trig_pin, 1);
-    k_busy_wait(10);  // Trigger pulse width of 10 microseconds
+    k_busy_wait(10);
     gpio_pin_set(gpio_dev, trig_pin, 0);
 
-    // Wait for ECHO signal to go HIGH
-    while (gpio_pin_get(gpio_dev, echo_pin) == 0);
+    uint32_t start_wait = k_cycle_get_32();
+    while (gpio_pin_get(gpio_dev, echo_pin) == 0) {
+        if ((k_cycle_get_32() - start_wait) > timeout_cycles) {
+            return 0; // timeout
+        }
+    }
 
     start = k_cycle_get_32();
 
-    // Wait for ECHO signal to go LOW
-    while (gpio_pin_get(gpio_dev, echo_pin) == 1);
+    start_wait = k_cycle_get_32();
+    while (gpio_pin_get(gpio_dev, echo_pin) == 1) {
+        if ((k_cycle_get_32() - start_wait) > timeout_cycles) {
+            return 0; // timeout
+        }
+    }
 
     end = k_cycle_get_32();
-
-    // Calculate duration and convert to distance
     uint32_t duration = end - start;
+
     double time_s = static_cast<double>(duration) / sys_clock_hw_cycles_per_sec();
     uint16_t distance_cm = static_cast<uint16_t>((time_s * 34300) / 2); // Speed of sound = 34300 cm/s
 

@@ -1,3 +1,13 @@
+/**
+ * @file lidar.h
+ * @author Wojtek Sekuła
+ * @brief 
+ * @date 2025-01-02
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ */
+
 #ifndef LIDAR_H
 #define LIDAR_H
 
