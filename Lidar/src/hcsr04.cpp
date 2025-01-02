@@ -23,7 +23,7 @@ int HCSR04::init() {
     return 0;
 }
 
-int HCSR04::measureDistance() {
+uint16_t HCSR04::measureDistance() {
     uint32_t start, end;
 
     gpio_pin_set(gpio_dev, trig_pin, 1);
@@ -43,7 +43,7 @@ int HCSR04::measureDistance() {
     // Calculate duration and convert to distance
     uint32_t duration = end - start;
     double time_s = static_cast<double>(duration) / sys_clock_hw_cycles_per_sec();
-    int distance_cm = static_cast<int>((time_s * 34300) / 2); // Speed of sound = 34300 cm/s
+    uint16_t distance_cm = static_cast<uint16_t>((time_s * 34300) / 2); // Speed of sound = 34300 cm/s
 
     return distance_cm;
 }

@@ -151,6 +151,8 @@ public:
      * @return 0 on success, negative error code otherwise.
      */
     int send_ack_payload(const char* message);
+
+    int send_ack_payload(const uint8_t* data, size_t length);
 };
 
 #endif // NRF24_H

@@ -10,7 +10,7 @@ public:
     HCSR04(const struct device* gpio_dev, uint8_t trig_pin, uint8_t echo_pin);
 
     int init();
-    int measureDistance();
+    uint16_t measureDistance();
 
 private:
     const struct device* gpio_dev;

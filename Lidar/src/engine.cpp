@@ -2,7 +2,7 @@
 
 /* GPIO and PWM Definitions */
 #define MOTOR_IN1_PIN 11
-#define MOTOR_IN2_PIN 10
+#define MOTOR_IN2_PIN 22
 #define MOTOR_IN3_PIN 18
 #define MOTOR_IN4_PIN 19
 

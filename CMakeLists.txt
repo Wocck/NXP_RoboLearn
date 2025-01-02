@@ -11,7 +11,7 @@ endif()
 
 
 if(SELECTED_PROJECT STREQUAL "LIDAR")
-    target_sources(app PRIVATE Lidar/src/main.cpp Lidar/src/engine.cpp Lidar/src/nrf24.cpp Lidar/src/hcsr04.cpp)
+    target_sources(app PRIVATE Lidar/src/main.cpp Lidar/src/lidar.cpp Lidar/src/engine.cpp Lidar/src/nrf24.cpp Lidar/src/hcsr04.cpp)
     target_include_directories(app PRIVATE Lidar/include)
 else()
     message(FATAL_ERROR "Unknown project: ${SELECTED_PROJECT}")

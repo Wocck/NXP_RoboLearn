@@ -82,8 +82,8 @@ void NRF24::handle_irq() {
             send_command(FLUSH_RX, nullptr, 0);
             send_command(FLUSH_TX, nullptr, 0);
 
-            uint8_t clear_flags = 0x40;
-            write_register(0x07, &clear_flags, 1);
+            // uint8_t clear_flags = 0x40;
+            // write_register(0x07, &clear_flags, 1);
         }
 
         // Clear RX_DR flag
@@ -423,7 +423,8 @@ int NRF24::send_ack_payload(const char* message) {
     }
 
     if (fifo_status & 0x20) { // TX_FULL bit
-        printk("FIFO TX is full, dropping payload\n");
+        printk("FIFO TX is full, dropping payload, flushing TX...\n");
+        send_command(FLUSH_TX, nullptr, 0);
         return -1; // Nie próbuj wysyłać, jeśli FIFO jest pełne
     }
     if (!message) {
@@ -448,6 +449,51 @@ int NRF24::send_ack_payload(const char* message) {
 
     struct spi_buf spi_tx = { .buf = tx_buf, .len = len + 1 };
     struct spi_buf spi_rx = { .buf = rx_buf, .len = len + 1 };
+    struct spi_buf_set tx = { .buffers = &spi_tx, .count = 1 };
+    struct spi_buf_set rx = { .buffers = &spi_rx, .count = 1 };
+
+    // Transmisja przez SPI
+    int ret = spi_transceive(spi_dev, &spi_cfg, &tx, &rx);
+    if (ret < 0) {
+        printk("Failed to send ACK payload\n");
+        return ret;
+    }
+
+    // Czyszczenie flag STATUS (TX_DS, RX_DR, MAX_RT)
+    uint8_t clear_flags = 0x70;
+    write_register(STATUS_REG, &clear_flags, 1);
+
+    return 0; // Sukces
+}
+
+int NRF24::send_ack_payload(const uint8_t* data, size_t length) {
+    uint8_t fifo_status;
+    if (read_register(0x17, &fifo_status, 1) != 0) { // FIFO_STATUS register
+        printk("Failed to read FIFO_STATUS\n");
+        return -1;
+    }
+
+    if (fifo_status & 0x20) { // TX_FULL bit
+        printk("FIFO TX is full, dropping payload, flushing TX...\n");
+        send_command(FLUSH_TX, nullptr, 0);
+        return -1; // Nie próbuj wysyłać, jeśli FIFO jest pełne
+    }
+    if (!data) {
+        printk("Payload message is null\n");
+        return -1;
+    }
+
+    // Przygotowanie ładunku
+    uint8_t payload[32] = {0}; // Maksymalny rozmiar payloadu dla nRF24L01+
+    memcpy(payload, data, length);
+
+    // Wpisanie danych do ACK Payload FIFO
+    uint8_t cmd = 0xA8; // Komenda W_ACK_PAYLOAD (dla Pipe 0)
+    tx_buf[0] = cmd;
+    memcpy(&tx_buf[1], payload, length);
+
+    struct spi_buf spi_tx = { .buf = tx_buf, .len = length + 1 };
+    struct spi_buf spi_rx = { .buf = rx_buf, .len = length + 1 };
     struct spi_buf_set tx = { .buffers = &spi_tx, .count = 1 };
     struct spi_buf_set rx = { .buffers = &spi_rx, .count = 1 };
 
