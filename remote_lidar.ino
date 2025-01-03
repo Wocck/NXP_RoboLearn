@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <nRF24L01.h>
 #include <RF24.h>
 #include <Adafruit_SH110X.h>
@@ -14,10 +15,8 @@
 #define SCREEN_HEIGHT 64
 #define MAX_ANGLE 180
 
-
 RF24 radio(CE_PIN, CSN_PIN, 100000);
 Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
 
 struct __attribute__((packed)) DataPacket {
   int8_t joystickX;
@@ -25,7 +24,14 @@ struct __attribute__((packed)) DataPacket {
   uint8_t buttonPressed;
 };
 
-DataPacket data;
+struct __attribute__((packed)) LidarPayload {
+    uint8_t angle;
+    uint16_t distance;
+};
+
+DataPacket joystickData;
+LidarPayload lidarData;
+
 uint16_t previousDistances[MAX_ANGLE] = {0};
 int centerX, centerY;
 int maxDeflectionPositiveX, maxDeflectionNegativeX;
@@ -39,11 +45,9 @@ void calibrateJoystick() {
   Serial.println("Kalibracja joysticka. Proszę nie ruszać joysticka.");
   delay(2000);
 
-  // Odczyt wartości środkowych
   centerX = analogRead(VRX_PIN);
   centerY = analogRead(VRY_PIN);
 
-  // Maksymalne odchylenia (zakładając 12-bitowy ADC od 0 do 4095)
   maxDeflectionPositiveX = 4095 - centerX;
   maxDeflectionNegativeX = centerX - 0;
   maxDeflectionPositiveY = 4095 - centerY;
@@ -65,21 +69,18 @@ void readJoystick() {
   float percentageX = 0;
   float percentageY = 0;
 
-  // Obliczanie procentowego odchylenia dla osi X
   if (deltaX >= 0) {
     percentageX = pow((float)deltaX / maxDeflectionPositiveX, 1.5) * 100.0;
   } else {
     percentageX = -pow((float)-deltaX / maxDeflectionNegativeX, 1.5) * 100.0;
   }
 
-  // Obliczanie procentowego odchylenia dla osi Y
   if (deltaY >= 0) {
     percentageY = pow((float)deltaY / maxDeflectionPositiveY, 1.5) * 100.0;
   } else {
     percentageY = -pow((float)-deltaY / maxDeflectionNegativeY, 1.5) * 100.0;
   }
 
-  // Zastosowanie martwej strefy ±5%
   if (percentageX > -5 && percentageX < 5) {
     percentageX = 0;
   }
@@ -87,21 +88,18 @@ void readJoystick() {
     percentageY = 0;
   }
 
-  // Zaokrąglenie do najbliższej wartości dziesiętnej
   int valueX = ((int)(abs(percentageX) / 10)) * 10;
   int valueY = ((int)(abs(percentageY) / 10)) * 10;
 
   if (valueX > 90) valueX = 90;
   if (valueY > 90) valueY = 90;
 
+  joystickData.joystickX = valueY * ((percentageY >= 0) ? 1 : -1);
+  joystickData.joystickY = valueX * ((percentageX >= 0) ? 1 : -1);
 
-  // Mixed X and Y so that orientation of remote is proper (up and down)
-  data.joystickX = valueY * ((percentageY >= 0) ? 1 : -1);
-  data.joystickY = valueX * ((percentageX >= 0) ? 1 : -1);
+  joystickData.buttonPressed = !digitalRead(SW_PIN);
 
-  data.buttonPressed = !digitalRead(SW_PIN);
-
-  if(data.buttonPressed != 0 || data.joystickX != 0 || data.joystickY != 0){
+  if(joystickData.buttonPressed != 0 || joystickData.joystickX != 0 || joystickData.joystickY != 0){
     digitalWrite(LED, HIGH);
   } else {
     digitalWrite(LED, LOW);
@@ -114,7 +112,6 @@ void initializeRF24() {
     while (1);
   }
 
-  // Konfiguracja modułu radiowego
   radio.setAutoAck(true);
   radio.enableAckPayload();
   radio.enableDynamicPayloads();
@@ -129,13 +126,12 @@ void initializeRF24() {
 }
 
 void sendData() {
-    bool success = radio.write(&data, sizeof(data));
+    bool success = radio.write(&joystickData, sizeof(joystickData));
     if (success) {
         if (radio.isAckPayloadAvailable()) {
-            char response[32] = {0};
-            radio.read(&response, sizeof(response));
-            Serial.print("Otrzymano odpowiedź: ");
-            Serial.println(response);
+            LidarPayload received_payload;
+            radio.read(&received_payload, sizeof(received_payload));
+            drawLidarData(received_payload.angle, received_payload.distance);
         }
     } else {
       Serial.println("Błąd wysyłania danych.");
@@ -143,44 +139,34 @@ void sendData() {
 }
 
 void initializeOLED() {
-    if (!display.begin(0x3C, true)) { // Adres I2C wyświetlacza OLED (zazwyczaj 0x3C lub 0x3D)
+    if (!display.begin(0x3C, true)) {
         Serial.println("Nie można zainicjalizować wyświetlacza OLED!");
         while (1);
     }
 
     display.clearDisplay();
-    display.setTextSize(1);       // Ustaw rozmiar czcionki
-    display.setTextColor(SH110X_WHITE); // Ustaw kolor tekstu
+    display.setTextSize(1);
+    display.setTextColor(SH110X_WHITE);
     display.println("ROBOT            v1.2");
     display.display();
     delay(1000);
 }
 
-void displayMessage(const char *message) {
-    display.clearDisplay();          // Wyczyść ekran
-    display.setCursor(0, 0);         // Ustaw początkową pozycję kursora
-    display.println("Otrzymano:");   // Stały tekst
-    display.println(message);        // Wyświetl wiadomość
-    display.display();               // Aktualizuj ekran
-}
-
 void drawLidarData(uint8_t angle, uint16_t distance) {
-    const uint8_t centerX = SCREEN_WIDTH / 2; // Środek wyświetlacza
-    const uint8_t centerY = SCREEN_HEIGHT - 1; // Dolny środek
-    
-    float scale = 64.0 / 200.0; // Skalowanie dla maksymalnego zasięgu 200 cm
+    const uint8_t centerX = SCREEN_WIDTH / 2;
+    const uint8_t centerY = SCREEN_HEIGHT - 1;
 
-    // Usuń starą linię z bufora (tylko jeśli była rysowana)
+    float scale = 64.0 / 200.0;
+
     if (previousDistances[angle] > 0) {
         float oldScaledDistance = min(previousDistances[angle] * scale, 64.0f);
         float oldRad = radians(angle);
         int oldXEnd = centerX + oldScaledDistance * cos(oldRad);
         int oldYEnd = centerY - oldScaledDistance * sin(oldRad);
 
-        display.drawLine(centerX, centerY, oldXEnd, oldYEnd, SH110X_BLACK); // Usuń starą linię
+        display.drawLine(centerX, centerY, oldXEnd, oldYEnd, SH110X_BLACK);
     }
 
-    // Narysuj nową linię
     float scaledDistance = min(distance * scale, 64.0f);
     float rad = radians(angle);
     int xEnd = centerX + scaledDistance * cos(rad);
@@ -188,13 +174,9 @@ void drawLidarData(uint8_t angle, uint16_t distance) {
 
     display.drawLine(centerX, centerY, xEnd, yEnd, SH110X_WHITE);
 
-    // Zaktualizuj bufor
     previousDistances[angle] = distance;
-
-    // Wyświetl zmiany (pozwala uniknąć migotania)
     display.display();
 }
-
 
 void setup() {
   Serial.begin(115200);
@@ -207,18 +189,6 @@ void setup() {
 }
 
 void loop() {
-  for(int i = 0; i < 180; i++){
-    drawLidarData(i, 140);
-  }
-
-  for(int i = 0; i < 180; i++){
-    drawLidarData(i, 100);
-  }
-
-  for(int i = 0; i < 180; i++){
-    drawLidarData(i, 200);
-  }
-
   readJoystick();
   sendData();
   delay(50);
