@@ -12,16 +12,21 @@ endif()
 if(SELECTED_PROJECT STREQUAL "AHT40")
     target_sources(app PRIVATE Projects/AHT40/src/main.cpp Projects/AHT40/src/aht40.cpp)
     target_include_directories(app PRIVATE Projects/AHT40/include)
+
 elseif(SELECTED_PROJECT STREQUAL "ST1140")
     target_sources(app PRIVATE Projects/ST1140/main.cpp)
+
 elseif(SELECTED_PROJECT STREQUAL "HCSR04")
     target_sources(app PRIVATE Projects/HCSR04/main.cpp)
+
 elseif(SELECTED_PROJECT STREQUAL "NRF24L01")
     target_sources(app PRIVATE Projects/NRF24L01/src/main.cpp Projects/NRF24L01/src/nrf24.cpp)
     target_include_directories(app PRIVATE Projects/NRF24L01/include)
+
 elseif(SELECTED_PROJECT STREQUAL "UART")
-    target_sources(app PRIVATE Projects/UART/src/main.cpp Projects/UART/src/nrf24.cpp)
+    target_sources(app PRIVATE Projects/UART/src/main.cpp Projects/UART/src/uart_bridge.cpp)
     target_include_directories(app PRIVATE Projects/UART/include)
+
 else()
     message(FATAL_ERROR "Unknown project: ${SELECTED_PROJECT}")
 endif()

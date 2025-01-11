@@ -6,12 +6,17 @@
 
 ![Arduino Interface Pinout](docs/images/arduino_interface.png)
 
+2. Mapowe pinów z *DTS* i *MIMXRT1064 Reference Manual*:
+
+![MIMXRT1064 Pinmux](docs/images/nxp_mapowanie_pinow.png)
+
 1. Wykorzystywane moduły i ich dokumentacje
  - Ultradżwiękowy czujnik odległości **HC-SR04** : [Datasheet](https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf)
  - Czujnik dbiciowy optyczny **ST1140**: [Datasheet](https://cdn-reichelt.de/documents/datenblatt/C200/ST1140.pdf)
  - Wyświetlacz LCD 1.8'' **ST7735S**: [Datasheet]()
  - Czujnik temperatury i wilgotności **AHT20**: [Datasheet]()
  - Moduł radiowy **nRF24L01**: [Datasheet](http://www.nordicsemi.com/eng/Products/2.4GHz-RF/nRF24L01)
+ - ESP32 WROOM DevKit: [Datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf)
 
 ## Device Tree w Zephyr
 
@@ -387,6 +392,8 @@ Wszystkie wartości rejestrów możemy odczytać z tabeli `Register map table` n
 ## Ćwiczenie 3: UART z użyciem ESP32 WROOM DevKit
 
 ### Konfiguracja UART
+
+
 
 ### Podstawy komunikacji UART
 

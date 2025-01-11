@@ -16,3 +16,10 @@
     status = "okay";
     cs-gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
 };
+
+&lpuart3 {
+    status = "okay";
+    current-speed = <115200>;
+    parity = "even";
+    stop-bits = "2";
+};
