@@ -489,3 +489,6 @@ static inline int uart_configure(const struct device * dev, const struct uart_co
 **Rozwiąż problem**:
 - Co się stanie, gdy dane przychodzą z obu stron jednocześnie?
 - Jak dodać buforowanie, aby zapobiec utracie danych?
+
+**Uwaga**:
+Kod na płytke ESP32 należy napsiać i wgrac korzystając z środowiska Arduino IDE i biblioteki Serial. 
