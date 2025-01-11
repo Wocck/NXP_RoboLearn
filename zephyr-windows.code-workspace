@@ -6,12 +6,8 @@
 	],
 	"settings": {
 		"cmake.configureOnOpen": false,
-
 		"C_Cpp.default.compilerPath": "${userHome}\\zephyr-sdk-0.17.0\\arm-zephyr-eabi\\bin\\arm-zephyr-eabi-gcc",
 		"C_Cpp.default.compileCommands": "${workspaceFolder}\\build\\compile_commands.json",
-		"nrf-connect.applications": [
-			"${workspaceFolder}"
-		],
 		"files.associations": {
 			"memory": "cpp"
 		},
@@ -29,11 +25,12 @@
 				"command": "powershell",
 				"args": [
 					"-Command",
-					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' build -s . -p auto -b mimxrt1064_evk"
+					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' build -s . -p auto -b mimxrt1064_evk -- -DSELECTED_PROJECT=${input:project}"
 				],
 				"problemMatcher": [
 					"$gcc"
-				]
+				],
+				"detail": "Builds the selected Zephyr project for the mimxrt1064_evk board."
 			},
 			{
 				"label": "West Flash",
@@ -49,8 +46,44 @@
 				],
 				"problemMatcher": [
 					"$gcc"
-				]
+				],
+				"detail": "Flashes firmware from 'build' dir to mimxrt1064_evk board with JLink."
+			},
+			{
+				"label": "West Build (Clean)",
+				"type": "shell",
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				},
+				"command": "powershell",
+				"args": [
+					"-Command",
+					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' build -s . --pristine=always -b mimxrt1064_evk -- -DSELECTED_PROJECT=${input:project}"
+				],
+				"problemMatcher": [
+					"$gcc"
+				],
+				"detail": "Performs a pristine build (ensures no old build files are used)."
+			},
+			{
+				"label": "West Flash (Clean Build)",
+				"type": "shell",
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				},
+				"command": "powershell",
+				"args": [
+					"-Command",
+					"$env:ZEPHYR_BASE = (Resolve-Path '${workspaceFolder}\\..\\zephyrproject\\zephyr').Path; echo $env:ZEPHYR_BASE; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' build -s . --pristine=always -b mimxrt1064_evk -- -DSELECTED_PROJECT=${input:project}; & '${userHome}\\NXP_proj\\.venv\\Scripts\\west' flash --runner jlink"
+				],
+				"problemMatcher": [
+					"$gcc"
+				],
+				"detail": "Performs a pristine build and flashes firmware to mimxrt1064_evk board."
 			}
+
 		],
 		"inputs": [
 			{
@@ -68,6 +101,14 @@
 					"auto",
 					"always",
 					"never"
+				]
+			},
+			{
+				"id": "project",
+				"type": "pickString",
+				"description": "Select the project to build",
+				"options": [
+					"PROXIMITY_ALERT"
 				]
 			}
 		]
