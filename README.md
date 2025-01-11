@@ -393,10 +393,99 @@ Wszystkie wartości rejestrów możemy odczytać z tabeli `Register map table` n
 
 ### Konfiguracja UART
 
+**Połączenie sprzętowe:**
+| Pin ESP32        | Pin NXP MIMXRT1064_EVK     |
+|------------------|----------------------------|
+| TX (GPIO1)       | RX (D0)                    | 
+| RX (GPIO3)       | TX (D1)                    | 
+| GND              | GND                        |
+
+**Dlaczego potrzebujemy tych pinów?**
+1. **TX (Transmit)** i **RX (Receive)** umożliwiają przesyłanie danych w obie strony. Dane wysyłane przez TX jednego urządzenia są odbierane przez RX drugiego.
+2. **GND (Ground)** musi być wspólne dla obu urządzeń, aby zrealizować poprawną komunikację elektryczną. Bez wspólnej masy sygnały mogłyby być błędnie interpretowane.
+
+### Konfiguracja UART w Zephyr
+
+W pliku `mimxrt1064_evk.dts` możemy sprawdzić, że isnieje już node dla UART oraz interfejsu Arduino:
+
+```dts
+arduino_serial: &lpuart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+```
+
+W pliku `mimxrt1064_evk-pinctrl.dtsi` możemy odczytać konfigurację `pinmux_lpuart3`, która wskazuje że używa ona pinów `GPIO_AD_B1_07` (jako RX) i `GPIO_AD_B1_06` (jako TX). Zatem jedynie co musimy zrobić to włączyć UART3 w pliku `mimxrt1064_evk.overlay`:
+
+```dts
+&lpuart3 {
+    status = "okay";
+};
+```
+*Opcjonalnie możemy tu również skonfigurować parametry UART, takie jak prędkość transmisji, liczba bitów danych, parzystość, itp. chociaż łatwiej się to robi przy użyciu API Zephyr'a*
+
+`lpuart1` jest domyślnie włączony w konfiguracji Device Tree. Jest on skonfigurowany jako UART konsoli (shell), co oznacza, że dane wysyłane z płytki, takie jak wyniki funkcji `printk()` i logi systemowe, są przekierowywane na ten UART. Użytkownik może łatwo komunikować się z `lpuart1` za pomocą terminala szeregowego (np. `Serial Monitor` w VS Code) bez dodatkowej konfiguracji.
+
+### Przydatne funkcje Zephyr UART API w trybie pooling (synchronizacja blokująca)
+
+1. Odczytywanie pojedynczego znaku z bufora wejściowego. (Funckja blokuje wykonywanie się programu do momentu odczytania znaku):
+```C++
+int uart_poll_in(const struct device *dev, unsigned char *p_char);
+```
+
+2. Wysyła jeden bajt danych przez UART. (Funkcja blokuje wykonywanie się programu do momentu zakończenia transmisji):
+```C++
+int uart_poll_out(const struct device *dev, unsigned char out_char);
+```
 
 
-### Podstawy komunikacji UART
+Dostępne są również tryby:
+**Przerwaniowy (interrupt)** - Umożliwia obsługę zdarzeń UART za pomocą przerwań, co oznacza, że system reaguje na konkretne zdarzenia (np. odebranie lub wysłanie danych) w momencie ich wystąpienia, bez potrzeby ciągłego sprawdzania stanu urządzenia. W trybie przerwaniowym procesor zostaje powiadomiony przez kontroler UART o wystąpieniu określonego zdarzenia, co pozwala na bardziej efektywne wykorzystanie czasu procesora, ponieważ może on wykonywać inne zadania do czasu wystąpienia przerwania. 
+- **Asynchroniczny** - Obsługuje zaawansowane operacje, takie jak DMA (Direct Memory Access), czyli bezpośredni dostęp do pamięci bez udziału procesora. Dzięki temu możliwe jest przesyłanie dużych ilości danych w tle, co znacząco zmniejsza obciążenie procesora i pozwala na bardziej efektywne zarządzanie zasobami systemowymi. Tryb asynchroniczny umożliwia jednoczesne wysyłanie i odbieranie danych w sposób nieblokujący.
 
-### Przydatne funkcje Zephyr UART API
+### Struktura konfiguracyjna UART
+
+```C++
+struct uart_config {
+    uint32_t baudrate;           // Szybkość transmisji w bitach na sekundę (bps)
+    uint8_t parity;              // Parzystość (np. brak, parzysta, nieparzysta)
+    uint8_t stop_bits;           // Liczba bitów stopu (np. 1, 2)
+    uint8_t data_bits;           // Liczba bitów danych (np. 5, 6, 7, 8)
+    uint8_t flow_ctrl;           // Kontrola przepływu (np. brak, RTS/CTS)
+};
+```
+
+1. Pobranie bieżącej konfiguracji UART (funckja zapisuje konfigurację w `cfg`):
+```C++
+static inline int uart_config_get(const struct device * dev, struct uart_config * cfg);
+```
+
+2. Ustawienie nowej konfiguracji UART:
+```C++
+static inline int uart_configure(const struct device * dev, const struct uart_config * cfg);
+```
 
 ### Ćwiczenie - dwustronna komunikacja z ESP32
+
+**Cel**: Skonfigurować dwustronną komunikację między ESP32 a NXP MIMXRT1064_EVK przez UART tak jak na obrazku. Dane mają być przesyłane i odbierane w obie strony. To znaczy że jeżeli nadamy coś na `Serial Monitor` do płytki NXP to powinna ona przekierować wiadomość przez `lpuart3` do ESP32, a ESP32 powinna przesłać to z powrotem na `Serial Monitor`. Należy również zaproponować jakieś działanie w przypadku otrzymania określonej wiadomości. Na przykład zapalanie i gaszenie wbudowanej diody na daną odebraną komendę. 
+
+![Communication Schema](docs/images/uart_esp.png)
+
+
+**Instrukcje**:
+1. Podłącz ESP32 do NXP zgodnie z tabelą połączeń.
+2. Skonfiguruj lpuart1 jako UART dla komunikacji z terminalem USB.
+3. Skonfiguruj lpuart3 jako UART dla połączenia z ESP32.
+4. Zaimplementuj funkcję odbioru danych z lpuart1 i przesyłania ich do lpuart3 oraz odwrotnie w odpowiednich plikach projektu:
+- `src/main.cpp`: Obsługa inicjalizacji UART oraz logika sterująca mostkiem komunikacyjnym.
+- `src/uart_bridge.cpp`: Implementacja funkcji uart_bridge_loop, realizującej mostek komunikacyjny między dwoma UART-ami.
+
+**Sprawdzenie**:
+- Wyślij dane z terminala USB i sprawdź, czy pojawią się na ESP32 i na odwrót.
+- Sprawdź, czy komendy sa poprawnie interpretowane i odpowiednio reagują na zmiany diody.
+
+**Rozwiąż problem**:
+- Co się stanie, gdy dane przychodzą z obu stron jednocześnie?
+- Jak dodać buforowanie, aby zapobiec utracie danych?
