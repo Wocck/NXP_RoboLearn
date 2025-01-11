@@ -234,9 +234,6 @@ int NRF24::init() {
     uint8_t en_aa = EN_AA_DEFAULT;
     write_register(EN_AA, &en_aa, 1);
 
-    uint8_t config = CONFIG_DEFAULT;
-    write_register(CONFIG_REG, &config, 1);
-
     uint8_t status_clear = STATUS_CLEAR;
     write_register(STATUS_REG, &status_clear, 1);
 
