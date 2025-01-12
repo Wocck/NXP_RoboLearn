@@ -36,3 +36,10 @@ Oprogramowanie napisane przy użyciu **Arduino IDE** oraz biblioteki `NRF` od `T
 ## Pinout **nRF24L01**
 
 ![Pinout](docs/images/nrf24.png)
+
+## Pliki projektu
+
+- **Uart_bridge.ino** - kod źródłowy mostka UART do testowania komunikacji UART.
+- **Remote_control.ino** - kod źródłowy pilota zdalnego sterowania.
+- **Remote_oled.ino** - kod źródłowy pilota zdalnego sterowania z wyświetlaczem OLED (wyświetlanie wiadomości tekstowych).
+- **Remote_lidar.ino** - kod źródłowy pilota zdalnego sterowania z wyświetlaczem OLED i czujnikiem LIDAR (wyświetlanie odległości od przeszkód).
