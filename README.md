@@ -26,7 +26,7 @@ W ramach tego ćwiczenia zrealizujemy uproszczony system LIDAR, wykorzystując s
 
 Lidar (Light Detection and Ranging) to urządzenie służące do pomiaru odległości za pomocą promieniowania elektromagnetycznego. W naszym przypadku zamiast lasera wykorzystamy ultradźwiękowy czujnik odległości HC-SR04. W celu skanowania otoczenia, będziemy obracać serwomechanizmem, na którym zamocujemy czujnik. W ten sposób uzyskamy możliwość pomiaru odległości w różnych kierunkach. Porządanym efektem jest uzyskanie mapy odległości, którą będziemy przesyłać do kontrolera ESP32 a on będzie wyświetlał zwrotne dane na ekranie OLED. Może to wyglądać na przykłąd w ten sposób:
 
-![Lidar - przykład](images/lidar.jpg)
+![Lidar - przykład](docs/images/lidar.jpg)
 
 ## Serwomechanizm SG90
 
@@ -57,7 +57,7 @@ W projekcie będziemy korzystać z już zaimplementowanych funkcjonalności w na
 Teraz musimy dodać kolejny pin PWM do sterowania serwomechanizmem. 
 
 1. Identyfikacja numeru pinu:
-    - Wybieramy wolny pin zdolny do generowania sygnału PWM (patrz `images/arduino_interface.png`), np. `D5`.
+    - Wybieramy wolny pin zdolny do generowania sygnału PWM (patrz [arduino_interface](docs/images/arduino_interface.png)) np. `D5`.
     - Sprawdzamy faktyczny numer pinu w pliku [mimxrt1064_evk.dts](..\zephyrproject\zephyr\boards\nxp\mimxrt1064_evk\mimxrt1064_evk.dts) (CTRL+P -> `mimxrt1064_evk.dts` -> ENTER).
     - W sekcji `arduino_header` możemy zobaczyć że pin D5 jest przypisany do kontrolera GPIO1 pin 10. Co oznacza że w **Reference Manual** będzie oznaczony jako `GPIO1_IO10`.
     - W **Reference Manual** znajdziemy numerację pinów dla naszego kontrolera. W Tabeli 10-1 `Muxing Options` możemy znaleźć pin `GPIO1_IO10` oznaczony jako `GPIO_AD_B0_10`.
