@@ -36,7 +36,7 @@
         };
     };
     
-
+    /* Konfiguracja pinmux dla GPIO_AD_B0_10 */
     pinmux_flexpwm1: pinmux_flexpwm1 {
         group0 {
             pinmux = <&iomuxc_gpio_ad_b0_10_flexpwm1_pwma03_overlay>;
@@ -49,28 +49,28 @@
     };
 };
 
-/* Konfiguracja pinu GPIO_AD_B1_08 na IOMUXC_GPIO_AD_B1_08_FLEXPWM4_PWMA00*/
+/* Konfiguracja pinu GPIO_AD_B1_08 na IOMUXC_GPIO_AD_B1_08_FLEXPWM4_PWMA00 */
 &iomuxc {
     iomuxc_gpio_ad_b1_08_flexpwm4_pwma0_overlay: IOMUXC_GPIO_AD_B1_08_FLEXPWM4_PWMA00 {
         pinmux = <0x401F811C 0x1 0x401F8494 0x1 0x401F830C>;
     };
 };
 
-/* Konfiguracja pinu  */
+/* Konfiguracja pinu GPIO_AD_B0_10 na IOMUXC_GPIO_AD_B0_10_FLEXPWM1_PWMA03 */
 &iomuxc {
     iomuxc_gpio_ad_b0_10_flexpwm1_pwma03_overlay: IOMUXC_GPIO_AD_B0_10_FLEXPWM1_PWMA03 {
         pinmux = <0x401F80E4 0x1 0x401F8454 0x3 0x401F82D4>;
     };
 };
 
-/* Konfiguracja FLEXPWM dla GPIO_AD_B1_08 */
+/* Konfiguracja FLEXPWM dla GPIO_AD_B1_08 (D3)*/
 &flexpwm4_pwm0 {
     status = "okay";
     pinctrl-0 = <&pinmux_flexpwm4>;
     pinctrl-names = "default";
 };
 
-
+/* Konfiguracja FLEXPWM dla GPIO_AD_B0_10 (D5) */
 &flexpwm1_pwm3 {
     status = "okay";
     pinctrl-0 = <&pinmux_flexpwm1>;
