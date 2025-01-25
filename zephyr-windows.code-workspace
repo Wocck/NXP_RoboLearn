@@ -108,11 +108,11 @@
 				"type": "pickString",
 				"description": "Select the project to build",
 				"options": [
-					"AHT40",
+					"I2C_OLED",
 					"ST1140",
 					"HCSR04",
-					"NRF24L01",
-					"UART"
+					"SPI_NRF24L01",
+					"UART_BRIDGE"
 				]
 			}
 		]

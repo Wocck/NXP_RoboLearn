@@ -268,7 +268,7 @@ Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\i2c.h`
 
 ---
 
-## Ćwiczenie 2: SPI z użyciem modułu nRF24L01
+## Ćwiczenie 2: SPI z użyciem modułu nRF24L01 (`SPI_NRF24L01`)
 
 ### Schemat Połączeń
 
@@ -389,7 +389,7 @@ Wszystkie wartości rejestrów możemy odczytać z tabeli `Register map table` n
    - Wyświetl odebrane dane w konsoli.
 5. Przetestuj program, przesyłając dane z nadajnika (np. joysticka) i odbierając je na odbiorniku.
 
-## Ćwiczenie 3: UART z użyciem ESP32 WROOM DevKit
+## Ćwiczenie 3: UART z użyciem ESP32 WROOM DevKit (`UART_BRIDGE`)
 
 ### Konfiguracja UART
 
