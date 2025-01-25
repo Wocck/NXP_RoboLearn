@@ -284,7 +284,7 @@ Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\i2c.h`
 | GPIO_SD_B0_00         | D13                   | &gpio3   12                | SCK                        | Zegar SPI              |
 
 **Pinout modułu nRF24L01:** 
-![nRF24L01 Pinout](docs/images/nrf24l01.png)
+![nRF24L01 Pinout](docs/images/nRF24L01.png)
 
 
 
