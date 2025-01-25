@@ -6,7 +6,7 @@
 
 ![Arduino Interface Pinout](docs/images/arduino_interface.png)
 
-2. Mapowe pinów z *DTS* i *MIMXRT1064 Reference Manual*:
+2. Mapowanie pinów z *DTS* i *MIMXRT1064 Reference Manual*:
 
 ![MIMXRT1064 Pinmux](docs/images/nxp_mapowanie_pinow.png)
 
