@@ -125,9 +125,8 @@ Węzeł leds opisuje diody LED obsługiwane przez GPIO na płytce. W tym przypad
 - `compatible = "gpio-leds";` - Informuje, że ten węzeł jest kompatybilny z generatorem sterowników dla diod LED sterowanych przez GPIO.
 - `green_led: led-1 {}` - Definiuje konkretną diodę LED o nazwie `green_led` i przypisuje jej alias `led-1`.
 
-## Urządzenia nie wymagające protokołu komunikacyjnego
-Zaczynamy od urządzeń nie wymagających konkretnego protokołu komunikacyjnego, ponieważ są one prostsze w implementacji i pozwalają na szybkie zapoznanie się z działaniem komunikacji szeregowej. Urządzenia te posiadają własne uproszczone protokoły, które zwykle sprowadzają się do ustawienia jakiejś wartości na pinie i oczekiwaniu aż moduł zwróci jakieś dane. Oznacza to że przujmują one jedynie proste komendy wymagające odczytu stanu na danym pinie.
-
+## Odczyt danych z urządzeń nie wymagający komunikacji szeregowej
+Zaczynamy od urządzeń nie wymagających komunikacji szeregowej do wymiany danych. Są to urządzenia, które posiadają wbudwoane układy sterujące a ich działanie jest zwykle kontrolowane przez ustawianie i odczytywanie wartości LOW HIGH na konkretnych pinach.
 Te moduły to: **HC-SR04** oraz **ST1140**.
 
 ## Przykład 1: Czujnik odległości HC-SR04
