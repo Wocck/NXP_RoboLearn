@@ -205,7 +205,7 @@ Aby oprogramować moduł musimy:
 
 ---
 
-## Ćwiczenie 1: I2C z użyciem Wyświetlacza OLED 0,96"
+## Ćwiczenie 1: I2C z użyciem Czujnika temperatury AHT40
 
 W tym ćwiczeniu zbudujemy bardziej zaawansowany program, który będzie korzystał z kilku plików źródłowych. Taki podział pozwala na lepszą organizację kodu, ułatwia jego utrzymanie oraz testowanie poszczególnych modułów. Program będzie dotyczył komunikacji I2C z użyciem modułu AHT40, który jest czujnikiem temperatury i wilgotności. W ramach ćwiczenia nauczymy się, jak skonfigurować interfejs I2C, jak komunikować się z modułem AHT40 oraz jak odczytywać i interpretować dane z tego czujnika. Przykładowy kod znajdziesz w plikach `main_i2c.cpp`, `aht40.cpp`, `aht40.h` oraz `mimxrt1064_evk.overlay`.
 
