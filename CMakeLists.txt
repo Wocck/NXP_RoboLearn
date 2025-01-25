@@ -27,6 +27,10 @@ elseif(SELECTED_PROJECT STREQUAL "UART_BRIDGE")
     target_sources(app PRIVATE Projects/UART_BRIDGE/src/main.cpp Projects/UART_BRIDGE/src/uart_bridge.cpp)
     target_include_directories(app PRIVATE Projects/UART_BRIDGE/include)
 
+elseif(SELECTED_PROJECT STREQUAL "AHT40")
+    target_sources(app PRIVATE Projects/AHT40/src/main.cpp Projects/AHT40/src/aht40.cpp)
+    target_include_directories(app PRIVATE Projects/AHT40/include)
+
 else()
     message(FATAL_ERROR "Unknown project: ${SELECTED_PROJECT}")
 endif()
