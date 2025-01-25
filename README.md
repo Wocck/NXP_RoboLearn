@@ -126,6 +126,50 @@ Węzeł leds opisuje diody LED obsługiwane przez GPIO na płytce. W tym przypad
 - `green_led: led-1 {}` - Definiuje konkretną diodę LED o nazwie `green_led` i przypisuje jej alias `led-1`.
 
 
+## Plik `mimxrt1064_evk.overlay`
+W Zephyr RTOS możemy używać plików `.overlay` do modyfikowania konfiguracji sprzętowej zdefiniowanej w plikach `.dts` i `.dtsi`. Pozwala to na wprowadzanie zmian specyficznych dla aplikacji, bez konieczności edytowania oryginalnych plików. Na przykład, jeśli chcemy dodać nowe urządzenie, zmienić konfigurację pinów, czy włączyć interfejs SPI, możemy to zrobić w pliku `.overlay`. Taki plik powinien mieć nazwę zgodną z nazwą płytki, np. `mimxrt1064_evk.overlay`. Oto w jaki sposób możemy modyfikować konfigurację sprzętową w pliku `.overlay`:
+W celu uruchomienia konkretnego kontrolera (SPI, I2C, UART itp.) należy w pierwszej kolejności odnaleźć odpowiadający mu węzeł w plikach mimxrt1064_evk.dts oraz powiązanych plikach .dtsi. Każdy taki węzeł (ang. node) opisuje konfigurację urządzenia, w tym piny wykorzystywane do transmisji, sposób działania peryferium oraz status urządzenia. W plikach dts i dtsi można natrafić na linie zawierające wpisy typu &lpi2c1, &lpspi3, &lpuart1 i tym podobne; to właśnie tam definiowane są konkretne kontrolery, np. interfejs I2C, SPI czy UART.
+
+Aby włączyć (lub wyłączyć) dane urządzenie, należy w pliku `.overlay` odwołać się do jego etykiety, a następnie ustawić `status = "okay"` (włączenie) bądź `status = "disabled"` (wyłączenie). Jeśli chcemy dodać nowe właściwości lub nadpisać istniejące, możemy zadeklarować je w bloku odpowiadającym danemu węzłowi. Na przykład aby włączyc interfejs I2C1, należy dodać do pliku `mimxrt1064_evk.overlay` następujący blok:
+
+```dts
+&lpi2c1 {
+    status = "okay";
+};
+```
+
+W pliku `mimxrt1064_evk.dts` możemy sprawdzić pełną konfigurację kontrolera I2C i znajdziemy następujący Node:
+```dts
+&lpi2c1 {
+	status = "okay";
+
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+	};
+};
+``` 
+Konfiguracja mówi że kontroler I2C1 jest włączony i skonfigurowany zgodnie z `pinmux_lpi2c1`. Węzeł `ft5336@38` reprezentuje ekran dotykowy podłączony do kontrolera I2C1 z adresem 0x38. Oznacza to, że nie musieliśmy wcale w pliku overlay włączać kontrolera I2C1, ponieważ był on już włączony w pliku dts, jednak niczemu to nie szkodzi a pokaże jak można to zrobić gdy taki kontroler jest wyłączony. Teraz powinniśmy sprawdzić czy piny GPIO są poprawnie skonfigurowane w pliku `mimxrt1064_evk-pinctrl.dtsi` w sekcji `pinmux_lpi2c1`. 
+
+```dts
+pinmux_lpi2c1: pinmux_lpi2c1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_01_lpi2c1_sda>,
+				<&iomuxc_gpio_ad_b1_00_lpi2c1_scl>;
+			drive-strength = "r0-6";
+			drive-open-drain;
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+			input-enable;
+		};
+	};
+```
+Widzimy że piny SDA i SCL są przypisane odpowiednio do pinów `GPIO_AD_B1_01` i `GPIO_AD_B1_00`. Możemy sprawdzić ich fizyczne połączenie na płytce za pomocą przygtowanej grafiki z mapowaniem pinów [Przejdź do mapowania pinów](#wstep).
+
 ## Ćwiczenie 1: I2C z użyciem Czujnika temperatury AHT40
 
 W tym ćwiczeniu zbudujemy bardziej zaawansowany program, który będzie korzystał z kilku plików źródłowych. Taki podział pozwala na lepszą organizację kodu, ułatwia jego utrzymanie oraz testowanie poszczególnych modułów. Program będzie dotyczył komunikacji I2C z użyciem modułu AHT40, który jest czujnikiem temperatury i wilgotności. W ramach ćwiczenia nauczymy się, jak skonfigurować interfejs I2C, jak komunikować się z modułem AHT40 oraz jak odczytywać i interpretować dane z tego czujnika. Przykładowy kod znajdziesz w plikach `main_i2c.cpp`, `aht40.cpp`, `aht40.h` oraz `mimxrt1064_evk.overlay`.
@@ -212,17 +256,17 @@ Lub w pliku `zephyrproject\zephyr\include\zephyr\drivers\i2c.h`
 W pliku `mimxrt1064_evk.overlay` dodajemy konfigurację dla SPI:
 
 ```dts
-&lpspi1 {
-    status = "okay";
-    cs-gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
-};
-
 &gpio1 {
     status = "okay";
 };
 
 &gpio3 {
     status = "okay";
+};
+
+&lpspi1 {
+    status = "okay";
+    cs-gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
 };
 ```
 
@@ -343,6 +387,7 @@ W pliku `mimxrt1064_evk-pinctrl.dtsi` możemy odczytać konfigurację `pinmux_lp
 ```dts
 &lpuart3 {
     status = "okay";
+    current-speed = <115200>;
 };
 ```
 *Opcjonalnie możemy tu również skonfigurować parametry UART, takie jak prędkość transmisji, liczba bitów danych, parzystość, itp. chociaż łatwiej się to robi przy użyciu API Zephyr'a*
