@@ -112,7 +112,8 @@
 					"ST1140",
 					"HCSR04",
 					"SPI_NRF24L01",
-					"UART_BRIDGE"
+					"UART_BRIDGE",
+					"AHT40"
 				]
 			}
 		]
