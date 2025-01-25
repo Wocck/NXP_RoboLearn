@@ -13,8 +13,8 @@
 1. Wykorzystywane moduły i ich dokumentacje
  - Ultradżwiękowy czujnik odległości **HC-SR04** : [Datasheet](https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf)
  - Czujnik dbiciowy optyczny **ST1140**: [Datasheet](https://cdn-reichelt.de/documents/datenblatt/C200/ST1140.pdf)
- - Wyświetlacz LCD 1.8'' **ST7735S**: [Datasheet]()
- - Czujnik temperatury i wilgotności **AHT20**: [Datasheet]()
+ - Wyświetlacz OLED 1.3'' **SH1106**: [Datasheet](https://msalamon.pl/download/1126/)
+ - Czujnik temperatury i wilgotności **AHT20**: [Datasheet](https://sklep.msalamon.pl/download/18927/)
  - Moduł radiowy **nRF24L01**: [Datasheet](http://www.nordicsemi.com/eng/Products/2.4GHz-RF/nRF24L01)
  - ESP32 WROOM DevKit: [Datasheet](https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf)
 
